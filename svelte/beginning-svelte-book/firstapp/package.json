@@ -1,5 +1,5 @@
 {
-  "name": "hello-world-vite",
+  "name": "firstapp",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,10 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
-    "svelte": "^3.54.0",
+    "svelte": "^3.55.1",
     "vite": "^4.0.0"
+  },
+  "dependencies": {
+    "sveltestrap": "^5.10.0"
   }
 }
