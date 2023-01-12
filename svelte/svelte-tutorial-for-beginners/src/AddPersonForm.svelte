@@ -1,4 +1,8 @@
 <script>
+  import { createEventDispatcher } from "svelte";
+
+  let dispatch = createEventDispatcher();
+
   let name;
   let beltColor;
   let age;
@@ -15,7 +19,14 @@
   ]
 
   const handleSubmit = () => {
-    console.log(name, beltColor, age, skills)
+    const person = {
+      name,
+      beltColor,
+      age,
+      skills,
+      id: Math.random()*101|0
+    };
+    dispatch('addPerson', person);
   }
 </script>
 

@@ -14,11 +14,18 @@
   const handleClick = (id) => {
     people = people.filter((person) => person.id != id);
   }
+
+  const addPerson = (e) => {
+    const newPerson = e.detail;
+    people = [newPerson, ...people]
+    showModal = false;
+    console.log(newPerson.id);
+  }
 </script>
 
 
 <Modal {showModal} on:click={toggleModal}>
-  <AddPersonForm />
+  <AddPersonForm on:addPerson={addPerson} />
 </Modal>
 <main class="container">
   <div>
