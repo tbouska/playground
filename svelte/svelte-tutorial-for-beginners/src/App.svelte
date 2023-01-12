@@ -19,7 +19,6 @@
     const newPerson = e.detail;
     people = [newPerson, ...people]
     showModal = false;
-    console.log(newPerson.id);
   }
 </script>
 
