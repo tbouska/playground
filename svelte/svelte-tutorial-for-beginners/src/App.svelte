@@ -1,5 +1,6 @@
 <script>
   import Modal from './Modal.svelte';
+  import AddPersonForm from './AddPersonForm.svelte';
 
   let showModal = false;
   let people = [
@@ -17,26 +18,31 @@
 
 
 <Modal {showModal} on:click={toggleModal}>
-  <h3>Add a new person</h3>
-  <form>
-    <input type="text" placeholder="name">
-    <input type="text" placeholder="belt color">
-    <button>Add Person</button>
-  </form>
+  <AddPersonForm />
 </Modal>
-<main>
-  <button on:click={toggleModal}>Open Modal</button>
-  {#each people as person (person.id)}
-    <div>
-      <h4>{person.name}</h4>
-      {#if person.beltColor === "black"}
-        <p><strong>MASTER NINJA</strong></p>
-      {/if}
-      <p>{person.age} years old, {person.beltColor} belt.</p>
-      <button on:click={() => handleClick(person.id)}>delete</button>
-    </div>
-  {/each}
+<main class="container">
+  <div>
+    <button on:click={toggleModal}>Open Modal</button>
+    {#each people as person (person.id)}
+        <div>
+        <h4>{person.name}</h4>
+        {#if person.beltColor === "black"}
+            <p><strong>MASTER NINJA</strong></p>
+        {/if}
+        <p>{person.age} years old, {person.beltColor} belt.</p>
+        <button on:click={() => handleClick(person.id)}>delete</button>
+        </div>
+    {/each}
+  </div>
 </main>
 
 <style>
+  .container {
+    width: 100%;
+    margin: 10% auto;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    display: flexbox;
+  }
 </style>

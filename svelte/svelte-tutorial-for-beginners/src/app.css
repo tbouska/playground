@@ -27,7 +27,6 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -37,15 +36,9 @@ h1 {
   line-height: 1.1;
 }
 
-.card {
-  padding: 2em;
-}
-
 #app {
   max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
 }
 
 button {
@@ -78,4 +71,20 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* extra styles */
+body {
+  color: #777;
+  background: #eee;
+  padding: 0;
+  margin: 0;
+}
+
+H4 {
+  color: orangered;
+}
+button {
+  background: white;
+
 }

@@ -9,6 +9,7 @@
     </div>
   </div>
 {/if}
+<main></main>
 
 <style>
   .backdrop {
@@ -18,9 +19,13 @@
     background: rgba(0,0,0,0.8);
   }
   .modal {
-    width: 50rem;
+    background: white;
+    padding: 10px;
+    margin: 10% auto;
+    max-width: 20rem;
     margin: 100px auto;
     background: white;
     border-radius:  15px;
+    text-align: center;
   }
 </style>
