@@ -1,0 +1,25 @@
+{
+  "todos": [
+    {
+      "id": "1",
+      "text": "Fetch Kid from Tuition",
+      "complete": false,
+      "date": "Mon Apr 11 2022",
+      "dateCompleted": false
+    },
+    {
+      "id": "3",
+      "text": "Post on twitter.com/greglim81",
+      "complete": false,
+      "date": "Mon Apr 11 2022",
+      "dateCompleted": false
+    },
+    {
+      "id": "e836cd2d-821d-4304-a196-5f2a3bdc40bd",
+      "text": "Order Lunch",
+      "complete": false,
+      "date": "Wed Jan 18 2023",
+      "dateCompleted": false
+    }
+  ]
+}

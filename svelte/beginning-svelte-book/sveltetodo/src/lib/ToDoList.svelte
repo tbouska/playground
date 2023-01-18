@@ -1,11 +1,28 @@
 <script>
   import { TodoStore } from "../stores.js";
   import { Table, Button } from "sveltestrap";
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
+  import axios from "axios";
+
+  const endpoint = "http://localhost:4000/todos/"
+
+  onMount(async () => {
+    try {
+      const res = await axios.get(endpoint);
+      TodoStore.update(() => {
+        return res.data;
+      });
+    }
+    catch(e){
+      console.log("Failed to fetch data from API");
+    }
+  });
 
   const dispatch = createEventDispatcher();
 
-  const handleDelete = (todoId) => {
+  const handleDelete = async (todoId) => {
+    await axios.delete(endpoint + todoId);
+
     TodoStore.update(currentTodos => {
       return currentTodos.filter(todo => todo.id != todoId)
     });
