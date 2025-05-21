@@ -3,6 +3,7 @@ Spinach
 Chicken Breast
 Salmon Fillet
 Milk
+Carrots
 Greek Yogurt
 Eggs
 Whole Wheat Bread
@@ -15,3 +16,4 @@ Orange Juice
 Tortilla Chips
 Chips
 Beer
+Bell Peppers
