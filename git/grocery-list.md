@@ -1,9 +1,4 @@
-Apples
-Spinach
-Chicken Breast
-Salmon Fillet
 Milk
-Carrots
 Greek Yogurt
 Eggs
 Whole Wheat Bread
@@ -21,3 +16,9 @@ Broccoli
 Bell Peppers
 Zucchini
 Sprite
+Tomatoes
+Chicken
+Eggs
+Butter
+Bread
+Rice
