@@ -13,3 +13,5 @@ Black Beans
 Tomato Sauce
 Orange Juice
 Tortilla Chips
+Chips
+Beer
