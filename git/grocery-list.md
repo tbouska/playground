@@ -8,6 +8,7 @@ Spaghetti
 Black Beans
 Tomato Sauce
 Orange Juice
+Apple Juice
 Tortilla Chips
 Chips
 Beer
