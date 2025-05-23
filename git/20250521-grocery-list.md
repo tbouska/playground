@@ -1,2 +1,0 @@
-bageta
-housky
