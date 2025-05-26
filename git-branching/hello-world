@@ -1,9 +1,6 @@
-Let's pretend this is some
-code to print Hello World!
-when working on the other feature,
-I noticed I could improve this code
-finalized the feature development
-refactored the code to be more efficient
-news: now I can process user's input
-Adding AI Chat as PoC
-I refactored this today
+Show figlet options
+Ask for figlet supported string style
+I need to work on this till future release
+print "Hello World!"
+or "Hello <user_input>!"
+redo speed improvement that I lost somehow
