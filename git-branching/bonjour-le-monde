@@ -1,6 +1,5 @@
 Show figlet options
 Ask for figlet supported string style
-I need to work on this till future release
 imprimer "Bonjour Le Monde!"
 ou "Bonjour <user input>!"
 redo speed improvement that I lost somehow

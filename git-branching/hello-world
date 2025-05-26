@@ -1,6 +1,5 @@
 Show figlet options
 Ask for figlet supported string style
-I need to work on this till future release
 print "Hello World!"
 or "Hello <user_input>!"
 redo speed improvement that I lost somehow
