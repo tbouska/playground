@@ -1,2 +1,2 @@
-print Hello World!
-or Hello <user_input>
+print "Hello World!"
+or "Hello <user_input>!"

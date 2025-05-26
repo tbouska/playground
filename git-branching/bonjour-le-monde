@@ -1,2 +1,2 @@
-imprimer Bonjour Le Monde
-ou Bonjour <user input>
+imprimer "Bonjour Le Monde!"
+ou "Bonjour <user input>!"
