@@ -1,5 +1,2 @@
-Tady je kod pro aplikaci
-ahoj svete
-pridavam novou funkci
-novinka: umim vzit vstup od uzivatele
-I refactored this today
+vytisknout "Ahoj svete!"
+nebo "Ahoj <user input>!"
