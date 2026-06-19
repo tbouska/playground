@@ -1,0 +1,67 @@
+board:
+  fill: "#efeae0"
+  edge: "#b7b0a0"
+  shadow: "#8a8478"
+  highlight: "#fbf8f1"
+  edge_width: 1.2
+  bevel_width: 1.4
+  gap_line_width: 1.0
+rail:
+  plus: "#c0392b"
+  minus: "#2c5fb3"
+hole:
+  fill: "#dcd6ca"
+  edge: "#a59e8c"
+  shadow: "#c8c1af"
+  hilite: "#ebe6da"
+  radius: 0.18
+  edge_width: 0.4
+gap:
+  fill: "#d2cabb"
+  shadow: "#a79f8d"
+lead:
+  color: "#555555"
+  width: 1.4
+dot:
+  fill: "#444444"
+  radius: 0.13
+hop:
+  radius: 0.22
+wire:
+  width: 2.0
+label:
+  ref: "#1f1f1f"
+  value: "#5a5a5a"
+title:
+  color: "#222222"
+column_label:
+  color: "#777777"
+tick_label:
+  color: "#555555"
+led:
+  fallback: "#888888"
+render:
+  dpi: 200
+channel:
+  R: "#c0392b"
+  G: "#27ae60"
+  B: "#2c5fb3"
+resistor:
+  body: "#e8e2d4"
+  body_edge: "#7a7466"
+  body_edge_width: 1.0
+  tolerance: "#7a4a1e"
+  multiplier_extra:
+    -1: "#cda434"
+    -2: "#bfc1c2"
+  digit_colors:
+    - "#1a1a1a"
+    - "#7a4a1e"
+    - "#c0392b"
+    - "#e67e22"
+    - "#f1c40f"
+    - "#27ae60"
+    - "#2c5fb3"
+    - "#8e44ad"
+    - "#7f8c8d"
+    - "#f2f2f2"
