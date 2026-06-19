@@ -27,9 +27,7 @@ Imports:
 # ///
 
 import math
-import re
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -37,139 +35,38 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgb
 from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
-# Ordered vertical lines of the board, top to bottom. "" marks a blank gap slot.
-LINE_ORDER: tuple[str, ...] = (
-    "T+",
-    "T-",
-    "",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "",
-    "B+",
-    "B-",
+from breadboard.geometry import GRID_ADDRESS, LINE_ORDER, RAIL_ADDRESS, Geometry
+from breadboard.model import Component, Layout, Pin
+from breadboard.style import (
+    BOARD_COLOR,
+    BOARD_EDGE,
+    BODY_COLOR,
+    CHANNEL_COLORS,
+    DOT_RADIUS,
+    GAP_COLOR,
+    GAP_SHADOW,
+    HIGHLIGHT_COLOR,
+    HOLE_EDGE,
+    HOLE_FILL,
+    HOLE_HILITE,
+    HOLE_RADIUS,
+    HOLE_SHADOW,
+    HOP_RADIUS,
+    LABEL_BBOX,
+    RAIL_MINUS_COLOR,
+    RAIL_PLUS_COLOR,
+    RENDER_DPI,
+    RESISTOR_DIGIT_COLORS,
+    RESISTOR_MULTIPLIER_EXTRA,
+    RESISTOR_TOLERANCE,
+    SHADOW_COLOR,
 )
-HOLE_RADIUS = 0.18
-RENDER_DPI = 200
-RAIL_PLUS_COLOR = "#c0392b"
-RAIL_MINUS_COLOR = "#2c5fb3"
-BOARD_COLOR = "#efeae0"
-BOARD_EDGE = "#b7b0a0"
-SHADOW_COLOR = "#8a8478"
-HIGHLIGHT_COLOR = "#fbf8f1"
-HOLE_FILL = "#dcd6ca"
-HOLE_EDGE = "#a59e8c"
-HOLE_SHADOW = "#c8c1af"
-HOLE_HILITE = "#ebe6da"
-# Connection-dot radius, shared by wires and every component lead/pin.
-DOT_RADIUS = 0.13
-# IEC resistor colour code, indexed by digit (0-9).
-RESISTOR_DIGIT_COLORS = (
-    "#1a1a1a", "#7a4a1e", "#c0392b", "#e67e22", "#f1c40f",
-    "#27ae60", "#2c5fb3", "#8e44ad", "#7f8c8d", "#f2f2f2",
-)
-# Sub-unity multiplier bands and the 5-band tolerance band (brown = 1%).
-RESISTOR_MULTIPLIER_EXTRA = {-1: "#cda434", -2: "#bfc1c2"}  # gold x0.1, silver x0.01
-RESISTOR_TOLERANCE = "#7a4a1e"
-GAP_COLOR = "#d2cabb"
-GAP_SHADOW = "#a79f8d"
-BODY_COLOR = "#e8e2d4"
-CHANNEL_COLORS: dict[str, str] = {"R": "#c0392b", "G": "#27ae60", "B": "#2c5fb3"}
-HOP_RADIUS = 0.22
-# Board-coloured halo behind text so wires routed beneath cannot scratch it.
-LABEL_BBOX: dict[str, Any] = {
-    "boxstyle": "round,pad=0.18",
-    "facecolor": BOARD_COLOR,
-    "edgecolor": "none",
-    "alpha": 0.82,
-}
-RAIL_ADDRESS = re.compile(r"^([TB][+-])(\d+)$")
-GRID_ADDRESS = re.compile(r"^([A-J])(\d+)$")
-
-
-@dataclass(frozen=True)
-class Pin:
-    """Describe a named module pin placed on a hole.
-
-    :ivar name: The pin label, e.g. ``"GPIO0"``.
-    :vartype name: str
-    :ivar hole: The hole address the pin sits on, e.g. ``"J3"``.
-    :vartype hole: str
-    """
-
-    name: str
-    hole: str
-
-
-@dataclass(frozen=True)
-class Component:
-    """Describe one placed component on the breadboard.
-
-    :ivar kind: The component kind: ``module``, ``resistor``, ``led-rgb``,
-        ``wire`` or ``power``.
-    :vartype kind: str
-    :ivar ref: The reference designator, or an empty string for wires.
-    :vartype ref: str
-    :ivar label: The display label, where applicable.
-    :vartype label: str
-    :ivar value: The component value, where applicable.
-    :vartype value: str
-    :ivar legs: The hole addresses for a two-leg part, in order.
-    :vartype legs: tuple[str, ...]
-    :ivar named_legs: The named-leg to hole mapping for an RGB LED.
-    :vartype named_legs: dict[str, str]
-    :ivar common: The RGB common type, ``cathode`` or ``anode``.
-    :vartype common: str
-    :ivar color: The wire color name.
-    :vartype color: str
-    :ivar endpoints: The two hole addresses of a wire, in order.
-    :vartype endpoints: tuple[str, str]
-    :ivar span: The inclusive column span ``(first, last)`` of a block.
-    :vartype span: tuple[int, int]
-    :ivar pins: The named pins of a module.
-    :vartype pins: tuple[Pin, ...]
-    """
-
-    kind: str
-    ref: str = ""
-    label: str = ""
-    value: str = ""
-    legs: tuple[str, ...] = ()
-    named_legs: dict[str, str] = field(default_factory=dict)
-    common: str = "cathode"
-    color: str = "black"
-    endpoints: tuple[str, str] = ("", "")
-    span: tuple[int, int] = (0, 0)
-    pins: tuple[Pin, ...] = ()
-
-
-@dataclass(frozen=True)
-class Layout:
-    """Describe a whole breadboard layout parsed from YAML.
-
-    :ivar title: The layout title.
-    :vartype title: str
-    :ivar columns: The number of numbered columns on the board.
-    :vartype columns: int
-    :ivar components: The placed components.
-    :vartype components: tuple[Component, ...]
-    """
-
-    title: str
-    columns: int
-    components: tuple[Component, ...]
 
 
 def _component_from_dict(data: dict[str, Any]) -> Component:
