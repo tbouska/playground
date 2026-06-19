@@ -1,0 +1,30 @@
+# Monorepo tool and environment definition for mise (https://mise.jdx.dev).
+#
+# Entering the repo activates the pinned tools and prepends ./bin to PATH, so the
+# `render` and `render-all` commands are available from any board subfolder.
+# Requires that `mise activate <shell>` is set up in your shell rc.
+
+[tools]
+python = "3.12"
+uv = "latest"
+
+[env]
+# Prepend the repo-local bin/ (resolved relative to this config file) to PATH.
+_.path = ["bin"]
+
+[tasks.render]
+description = "Render a board's schematic and breadboard views (pass a path, default cwd)"
+run = "render"
+
+[tasks.build]
+description = "Render every board's schematic and breadboard views across the repo"
+run = "render-all"
+
+[tasks.lock]
+description = "Lock every tool script's dependencies (uv) into a committed *.lock"
+run = """
+find tools -type f -name '*.py' -exec grep -l '/// script' {} + | while read -r script; do
+  echo "locking $script"
+  uv lock --script "$script"
+done
+"""

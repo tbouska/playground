@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Render every board's schematic AND breadboard layout, anywhere under the repo.
+#
+# A board is any directory containing a circuit.yaml and/or layout.yaml, at any
+# depth and under any folder name. .git, node_modules and .venv are skipped.
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+render="$(dirname "${BASH_SOURCE[0]}")/render"
+
+find "${repo_root}" \
+  -type d \( -name .git -o -name node_modules -o -name .venv \) -prune -o \
+  -type f \( -name circuit.yaml -o -name layout.yaml \) -print0 \
+  | while IFS= read -r -d '' file; do printf '%s\0' "$(dirname "${file}")"; done \
+  | sort -zu \
+  | while IFS= read -r -d '' board_dir; do "${render}" "${board_dir}"; done

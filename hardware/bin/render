@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Render a board's schematic AND breadboard layout in one go.
+#
+# Renders whichever of circuit.yaml / layout.yaml exist in the target board.
+#
+# Usage:
+#   render                       # render the board in the current directory
+#   render path/to/board         # render a specific board directory
+#   render path/to/circuit.yaml  # a file works too (its board dir is used)
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+schematic="${repo_root}/tools/schematic/render.py"
+breadboard="${repo_root}/tools/breadboard/render_layout.py"
+
+target="${1:-${PWD}}"
+
+# Determine board directory from target
+if [[ -f "${target}" ]]; then
+  board_dir="$(dirname "${target}")"
+elif [[ -d "${target}" ]]; then
+  board_dir="${target}"
+else
+  echo "render: '${target}' is not a file or directory" >&2
+  exit 1
+fi
+
+# Resolve to absolute path
+board_dir="$(cd "${board_dir}" && pwd)"
+
+rendered=0
+if [[ -f "${board_dir}/circuit.yaml" ]]; then
+  printf '>> circuit  %s\n' "${board_dir#"${repo_root}"/}/circuit.yaml"
+  uv run --script "${schematic}" "${board_dir}/circuit.yaml"
+  rendered=1
+fi
+if [[ -f "${board_dir}/layout.yaml" ]]; then
+  printf '>> layout   %s\n' "${board_dir#"${repo_root}"/}/layout.yaml"
+  uv run --script "${breadboard}" "${board_dir}/layout.yaml"
+  rendered=1
+fi
+
+if [[ "${rendered}" -eq 0 ]]; then
+  echo "render: no circuit.yaml or layout.yaml in '${board_dir}'" >&2
+  exit 1
+fi
