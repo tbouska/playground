@@ -1,0 +1,74 @@
+# Breadboard hole-placement layout.
+#
+# Hole addresses:
+#   Main grid : <row><col>  where row is A-J and col is 1..columns
+#               (rows A-E = top bank, F-J = bottom bank, separated by the gap;
+#               holes sharing a column within one bank are the same node).
+#   Rails     : T+<col> / T-<col> / B+<col> / B-<col>  (top/bottom, plus/minus).
+#
+# Positions below are illustrative of the topology, not traced hole-for-hole
+# from the photo. Edit them to match your actual build.
+
+title: ESP32 RGB LED breadboard
+breadboard:
+  columns: 40
+
+components:
+  - kind: module
+    ref: U1
+    label: ESP32-WROOM-32 DevKit
+    span: [1, 19]
+    pins:
+      - { name: "VIN", hole: "B1" }
+      - { name: GND, hole: "I19" }
+      - { name: GPIO0, hole: "I4" }
+      - { name: GPIO2, hole: "I5" }
+      - { name: GPIO15, hole: "I6" }
+
+  - kind: wire
+    color: blue
+    from: "J4"
+    to: "E37"
+  - kind: wire
+    color: green
+    from: "J5"
+    to: "E36"
+  - kind: wire
+    color: red
+    from: "J6"
+    to: "E26"
+
+  - kind: resistor
+    ref: R1
+    value: "220"
+    legs: ["B33", "B37"]
+  - kind: resistor
+    ref: R2
+    value: "220"
+    legs: ["C32", "C36"]
+  - kind: resistor
+    ref: R3
+    value: "220"
+    legs: ["D26", "D30"]
+
+  - kind: led-rgb
+    ref: D1
+    common: cathode
+    legs:
+      R: "A30"
+      K: "A31"
+      G: "A32"
+      B: "A33"
+
+  - kind: wire
+    color: black
+    from: "E31"
+    to: "B-31"
+  - kind: wire
+    color: black
+    from: "J19"
+    to: "B-19"
+  - kind: wire
+    color: red
+    from: "A1"
+    to: "T+1"
