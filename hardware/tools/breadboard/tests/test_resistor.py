@@ -29,11 +29,24 @@ def test_parse_ohms_valid(value: str, expected: float) -> None:
     assert _parse_ohms(value) == expected
 
 
-def test_parse_ohms_4R7_returns_none_locks_current_behavior() -> None:
-    # Uppercase R is lowercased to 'r' mid-string; float("4r7") raises -> None.
-    # The PRD aspirationally claims 4R7 -> 4.7 but the code does not implement
-    # that path today.  We lock what the code actually returns.
-    assert _parse_ohms("4R7") is None
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "PRD 00001 Critical Scenario specifies _parse_ohms('4R7') -> 4.7, but "
+        "render_layout._parse_ohms only strips a trailing 'r' ('47r' -> 47.0); "
+        "'4R7' lowercases to '4r7' with 'r' mid-string, so float('4r7') raises "
+        "and the function returns None. The SUT is intentionally unchanged: this "
+        "is a behavior-lock harness built BEFORE the renderer refactor (PRD "
+        "00002+), so implementing 4R7 parsing is out of scope and deferred to a "
+        "future PRD. strict=True makes the gap loud -- if 4R7 support is ever "
+        "added this test XPASSes and strict turns that into a failure, forcing a "
+        "deliberate update here."
+    ),
+)
+def test_parse_ohms_4R7_matches_prd_scenario_xfail() -> None:
+    # Blind-review C1: document the spec-vs-code gap loudly instead of silently
+    # enshrining `is None`. Currently xfails because the code returns None.
+    assert _parse_ohms("4R7") == 4.7
 
 
 @pytest.mark.parametrize("value", ["abc", ""])
