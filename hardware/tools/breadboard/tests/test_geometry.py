@@ -7,7 +7,7 @@ values were captured by running Geometry(63).hole(addr) directly.
 
 import pytest
 
-from render_layout import Geometry
+from breadboard.geometry import Geometry
 
 GEO = Geometry(63)
 
