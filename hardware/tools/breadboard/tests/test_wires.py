@@ -6,7 +6,7 @@ Covers:
   same-row/same-column wires (no lane).
 """
 
-import render_layout as r
+import breadboard.wires as r
 
 
 # ---------------------------------------------------------------------------
