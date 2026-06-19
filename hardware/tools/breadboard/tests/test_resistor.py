@@ -36,23 +36,12 @@ def test_parse_ohms_4R7_returns_none_locks_current_behavior() -> None:
     assert _parse_ohms("4R7") is None
 
 
-def test_parse_ohms_junk_returns_none() -> None:
-    assert _parse_ohms("abc") is None
-
-
-def test_parse_ohms_empty_returns_none() -> None:
-    assert _parse_ohms("") is None
-
-
-def test_parse_ohms_junk_does_not_raise() -> None:
-    # Defensive: ensure no exception escapes for garbage input.
-    result = _parse_ohms("abc")
-    assert result is None
-
-
-def test_parse_ohms_empty_does_not_raise() -> None:
-    result = _parse_ohms("")
-    assert result is None
+@pytest.mark.parametrize("value", ["abc", ""])
+def test_parse_ohms_invalid_returns_none_without_raising(value: str) -> None:
+    # Invalid input returns None and never raises. A passing `is None` assertion
+    # already proves no exception escaped, so a separate "does not raise" test
+    # would be redundant.
+    assert _parse_ohms(value) is None
 
 
 # ---------------------------------------------------------------------------
@@ -75,6 +64,13 @@ def test_format_ohms_small() -> None:
     assert _format_ohms("47") == "47 Ω"
 
 
+@pytest.mark.parametrize("value", ["abc", "", "4R7"])
+def test_format_ohms_invalid_returns_raw_unchanged(value: str) -> None:
+    # PRD: invalid input returns the raw string, never raises. _format_ohms
+    # echoes any value it cannot parse as a number back verbatim.
+    assert _format_ohms(value) == value
+
+
 # ---------------------------------------------------------------------------
 # _resistor_bands
 # ---------------------------------------------------------------------------
@@ -88,6 +84,14 @@ def test_resistor_bands_sub_100_ohm_uses_gold_multiplier() -> None:
     # 47 Ω: multiplier exponent is -1, which maps to gold (#cda434).
     result = _resistor_bands("47")
     assert result == ["#f1c40f", "#8e44ad", "#1a1a1a", "#cda434", "#7a4a1e"]
+
+
+def test_resistor_bands_sub_10_ohm_uses_silver_multiplier() -> None:
+    # 4.7 Ω: multiplier exponent is -2, which maps to silver (#bfc1c2). Same
+    # significant digits as the 47 Ω gold case above; only the multiplier band
+    # differs (gold #cda434 -> silver #bfc1c2).
+    result = _resistor_bands("4.7")
+    assert result == ["#f1c40f", "#8e44ad", "#1a1a1a", "#bfc1c2", "#7a4a1e"]
 
 
 def test_resistor_bands_zero_returns_none() -> None:

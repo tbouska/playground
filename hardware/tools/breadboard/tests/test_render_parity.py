@@ -13,7 +13,7 @@ Re-blessing goldens:
     Set the environment variable REBLESS_GOLDENS=1 before running to overwrite
     the golden files with the current renderer output:
 
-        REBLESS_GOLDENS=1 uv run --with pytest --with matplotlib --with pyyaml \
+        REBLESS_GOLDENS=1 uv run --with pytest --with 'matplotlib==3.11.0' --with 'pyyaml==6.0.3' \
             pytest hardware/tools/breadboard/tests/test_render_parity.py -q
 """
 
