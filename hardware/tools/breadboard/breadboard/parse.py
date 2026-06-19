@@ -60,4 +60,5 @@ def load_layout(path: Path) -> Layout:
         title=str(data.get("title", "Breadboard layout")),
         columns=int(data["breadboard"]["columns"]),
         components=components,
+        style=data.get("style"),
     )

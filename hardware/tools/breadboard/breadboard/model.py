@@ -67,8 +67,11 @@ class Layout:
     :vartype columns: int
     :ivar components: The placed components.
     :vartype components: tuple[Component, ...]
+    :ivar style: Inline style overrides from the layout YAML ``style:`` key, or None.
+    :vartype style: dict | None
     """
 
     title: str
     columns: int
     components: tuple[Component, ...]
+    style: dict | None = None

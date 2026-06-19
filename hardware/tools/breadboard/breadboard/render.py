@@ -31,7 +31,7 @@ def render(layout: Layout, out_stem: Path, style: Style | None = None) -> None:
     :rtype: None
     """
     if style is None:
-        style = load_style()
+        style = load_style(inline=layout.style)
     geo = Geometry(layout.columns)
     width = max(8.0, layout.columns * 0.42)
     figure, axes = plt.subplots(figsize=(width, 6.5))

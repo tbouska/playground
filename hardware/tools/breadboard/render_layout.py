@@ -19,6 +19,7 @@ puts its own directory on ``sys.path``, then delegates to the package.
 # ]
 # ///
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -30,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from breadboard.parse import load_layout
 from breadboard.render import render
+from breadboard.style import load_style
 
 
 def main() -> None:
@@ -38,8 +40,21 @@ def main() -> None:
     :returns: None. The function writes the rendered image files to disk.
     :rtype: None
     """
-    source = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("layout.yaml")
-    render(load_layout(source), source.with_suffix(""))
+    parser = argparse.ArgumentParser(
+        description="Render a breadboard layout to SVG + PNG."
+    )
+    parser.add_argument(
+        "layout", nargs="?", default="layout.yaml",
+        help="Path to the layout YAML (default: layout.yaml)",
+    )
+    parser.add_argument(
+        "--style", default=None,
+        help="Optional path to a style-override YAML",
+    )
+    args = parser.parse_args()
+    source = Path(args.layout)
+    layout = load_layout(source)
+    render(layout, source.with_suffix(""), load_style(path=args.style, inline=layout.style))
 
 
 if __name__ == "__main__":
