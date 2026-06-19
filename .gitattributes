@@ -1,0 +1,4 @@
+# Generated matplotlib golden SVGs: faithful renderer output whose path-data
+# lines carry matplotlib's own trailing spaces. Don't flag them in
+# `git diff --check` / whitespace pre-commit hooks. Re-bless via REBLESS_GOLDENS.
+hardware/tools/breadboard/tests/fixtures/golden/*.svg -whitespace

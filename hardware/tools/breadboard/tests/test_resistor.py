@@ -44,8 +44,6 @@ def test_parse_ohms_valid(value: str, expected: float) -> None:
     ),
 )
 def test_parse_ohms_4R7_matches_prd_scenario_xfail() -> None:
-    # Blind-review C1: document the spec-vs-code gap loudly instead of silently
-    # enshrining `is None`. Currently xfails because the code returns None.
     assert _parse_ohms("4R7") == 4.7
 
 
