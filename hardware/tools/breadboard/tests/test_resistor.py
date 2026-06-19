@@ -7,7 +7,7 @@ were captured by running the functions and hard-coding their exact output.
 
 import pytest
 
-from render_layout import _format_ohms, _parse_ohms, _resistor_bands
+from breadboard.components.resistor import _format_ohms, _parse_ohms, _resistor_bands
 
 
 # ---------------------------------------------------------------------------
