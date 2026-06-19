@@ -53,6 +53,35 @@ def test_render_logs_warning_for_unknown_kind(tmp_path, caplog) -> None:
     )
 
 
+def test_render_does_not_warn_for_wire_kind(tmp_path, caplog) -> None:
+    # A `wire` is a SUPPORTED kind, drawn by the dedicated `_draw_wires` path,
+    # not the component registry. The dispatch loop must skip it SILENTLY: the
+    # pre-refactor monolith did (`drawers.get("wire")` was None and the loop
+    # skipped it with no note). Regression guard for the registry rewrite, which
+    # warned on every None drawer and so logged "unknown component kind 'wire'"
+    # for every wire in every real layout.
+    wire = model.Component(kind="wire", endpoints=("A2", "C4"), color="red")
+    known = model.Component(kind="resistor", ref="R1", value="220", legs=("A6", "A8"))
+    layout = model.Layout(title="wire kind", columns=25, components=(known, wire))
+    out_stem = tmp_path / "wire_kind"
+
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        render_layout.render(layout, out_stem)
+
+    wire_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno >= logging.WARNING
+        and "unknown component kind" in r.getMessage()
+        and "wire" in r.getMessage()
+    ]
+    assert wire_warnings == [], (
+        "'wire' is a supported kind drawn by _draw_wires; the dispatch loop must "
+        "skip it without logging an 'unknown component kind' WARNING; "
+        f"got: {wire_warnings}"
+    )
+
+
 def test_render_skips_unknown_but_still_renders_known(tmp_path, caplog) -> None:
     # An unknown kind must not abort the render: the known resistor still draws
     # and the output file is written. This guards against a renderer that
