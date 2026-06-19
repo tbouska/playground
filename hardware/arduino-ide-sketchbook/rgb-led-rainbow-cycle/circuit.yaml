@@ -1,0 +1,26 @@
+title: ESP32 RGB LED
+
+mcu:
+  label: ESP32-WROOM-32 DevKit
+  power:
+    - pin: "VIN"
+      net: "+5V"
+    - pin: GND
+      net: GND
+
+load:
+  label: RGB LED (common cathode)
+  common:
+    pin: K
+    net: GND
+
+channels:
+  - gpio: GPIO0
+    load_pin: R
+    resistor: { ref: R1, value: "220\u03A9" }
+  - gpio: GPIO2
+    load_pin: G
+    resistor: { ref: R2, value: "220\u03A9" }
+  - gpio: GPIO15
+    load_pin: B
+    resistor: { ref: R3, value: "220\u03A9" }
