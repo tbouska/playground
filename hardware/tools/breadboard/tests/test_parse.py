@@ -1,7 +1,8 @@
 """Tests for breadboard.parse.load_layout.
 
-Red-phase TDD: breadboard/parse.py does not exist yet. These tests will
-fail with ModuleNotFoundError until the module is created.
+Verifies load_layout parses the all-components fixture into Layout/Component
+value objects with the expected title, columns, component kinds, and module
+pin mapping.
 """
 
 from pathlib import Path
