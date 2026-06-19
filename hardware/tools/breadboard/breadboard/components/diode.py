@@ -11,16 +11,17 @@ from breadboard.components.base import (
 )
 from breadboard.geometry import Geometry
 from breadboard.model import Component
+from breadboard.style import Style
 
 
 @register("diode")
-def _diode(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _diode(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw a diode body with a cathode band on the second leg."""
     p1, p2 = geo.hole(component.legs[0]), geo.hole(component.legs[1])
     ux, uy, nx, ny, mx, my, length = _leg_frame(p1, p2)
     body_half = min(0.32 * length, 0.5)
     width = 0.18
-    e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half)
+    e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half, style)
     axes.add_patch(
         Polygon(
             _body_quad(e1, e2, nx, ny, width),
@@ -39,5 +40,5 @@ def _diode(axes: plt.Axes, geo: Geometry, component: Component) -> None:
             closed=True, facecolor="#d8d8d8", edgecolor="none", zorder=4.5,
         )
     )
-    _leg_dots(axes, p1, p2)
-    _part_label(axes, mx, my, nx, ny, component.ref, component.value)
+    _leg_dots(axes, style, p1, p2)
+    _part_label(axes, mx, my, nx, ny, component.ref, component.value, style)

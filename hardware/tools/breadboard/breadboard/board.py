@@ -2,24 +2,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Rectangle
 
 from breadboard.geometry import Geometry
-from breadboard.style import (
-    BOARD_COLOR,
-    BOARD_EDGE,
-    GAP_COLOR,
-    GAP_SHADOW,
-    HIGHLIGHT_COLOR,
-    HOLE_EDGE,
-    HOLE_FILL,
-    HOLE_HILITE,
-    HOLE_RADIUS,
-    HOLE_SHADOW,
-    RAIL_MINUS_COLOR,
-    RAIL_PLUS_COLOR,
-    SHADOW_COLOR,
-)
+from breadboard.style import Style
 
 
-def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
+def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
     """Draw the board background, rails, holes, and row/column labels."""
     ys = list(geo.line_y.values())
     top, bottom = max(ys), min(ys)
@@ -35,7 +21,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             board_h,
             boxstyle=box,
             mutation_aspect=1.0,
-            facecolor=SHADOW_COLOR,
+            facecolor=style.color("board.shadow"),
             edgecolor="none",
             alpha=0.5,
             zorder=-1,
@@ -48,9 +34,9 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             board_h,
             boxstyle=box,
             mutation_aspect=1.0,
-            facecolor=BOARD_COLOR,
-            edgecolor=BOARD_EDGE,
-            linewidth=1.2,
+            facecolor=style.color("board.fill"),
+            edgecolor=style.color("board.edge"),
+            linewidth=style.dim("board.edge_width"),
             zorder=0,
         )
     )
@@ -63,8 +49,8 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             boxstyle="round,pad=0,rounding_size=0.7",
             mutation_aspect=1.0,
             facecolor="none",
-            edgecolor=HIGHLIGHT_COLOR,
-            linewidth=1.4,
+            edgecolor=style.color("board.highlight"),
+            linewidth=style.dim("board.bevel_width"),
             alpha=0.6,
             zorder=0.2,
         )
@@ -77,7 +63,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             (board_x, mid - chan_half),
             board_w,
             2 * chan_half,
-            facecolor=GAP_COLOR,
+            facecolor=style.color("gap.fill"),
             edgecolor="none",
             zorder=0.5,
         )
@@ -85,32 +71,36 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
     axes.plot(
         [board_x, board_x + board_w],
         [mid + chan_half, mid + chan_half],
-        color=GAP_SHADOW,
-        linewidth=1.0,
+        color=style.color("gap.shadow"),
+        linewidth=style.dim("board.gap_line_width"),
         zorder=0.6,
     )
     axes.plot(
         [board_x, board_x + board_w],
         [mid - chan_half, mid - chan_half],
-        color=HIGHLIGHT_COLOR,
-        linewidth=1.0,
+        color=style.color("board.highlight"),
+        linewidth=style.dim("board.gap_line_width"),
         alpha=0.7,
         zorder=0.6,
     )
     for key, y in geo.line_y.items():
         if key in ("T+", "B+"):
             axes.plot(
-                [1, geo.columns], [y, y], color=RAIL_PLUS_COLOR, linewidth=1.2, zorder=1
+                [1, geo.columns],
+                [y, y],
+                color=style.color("rail.plus"),
+                linewidth=style.dim("rail.width"),
+                zorder=1,
             )
         if key in ("T-", "B-"):
             axes.plot(
                 [1, geo.columns],
                 [y, y],
-                color=RAIL_MINUS_COLOR,
-                linewidth=1.2,
+                color=style.color("rail.minus"),
+                linewidth=style.dim("rail.width"),
                 zorder=1,
             )
-        side = HOLE_RADIUS * 1.7
+        side = style.dim("hole.radius") * 1.7
         off = side * 0.1
         for col in range(1, geo.columns + 1):
             # Bevelled socket lit from the top-left, matching the board's drop
@@ -121,7 +111,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
                     (col - side / 2 - off, y - side / 2 + off),
                     side,
                     side,
-                    facecolor=HOLE_HILITE,
+                    facecolor=style.color("hole.hilite"),
                     edgecolor="none",
                     zorder=1.88,
                 )
@@ -131,7 +121,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
                     (col - side / 2 + off, y - side / 2 - off),
                     side,
                     side,
-                    facecolor=HOLE_SHADOW,
+                    facecolor=style.color("hole.shadow"),
                     edgecolor="none",
                     zorder=1.9,
                 )
@@ -141,9 +131,9 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
                     (col - side / 2, y - side / 2),
                     side,
                     side,
-                    facecolor=HOLE_FILL,
-                    edgecolor=HOLE_EDGE,
-                    linewidth=0.4,
+                    facecolor=style.color("hole.fill"),
+                    edgecolor=style.color("hole.edge"),
+                    linewidth=style.dim("hole.edge_width"),
                     zorder=2,
                 )
             )
@@ -152,7 +142,15 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             label = "+"
         elif key in ("T-", "B-"):
             label = "-"
-        axes.text(0.0, y, label, ha="right", va="center", fontsize=8, color="#555")
+        axes.text(
+            0.0,
+            y,
+            label,
+            ha="right",
+            va="center",
+            fontsize=8,
+            color=style.color("tick_label.color"),
+        )
         axes.text(
             geo.columns + 1.0,
             y,
@@ -160,7 +158,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
             ha="left",
             va="center",
             fontsize=8,
-            color="#555",
+            color=style.color("tick_label.color"),
         )
     for col in range(1, geo.columns + 1):
         if col == 1 or col % 5 == 0:
@@ -171,7 +169,7 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
                 ha="center",
                 va="bottom",
                 fontsize=7,
-                color="#777",
+                color=style.color("column_label.color"),
             )
             axes.text(
                 col,
@@ -180,5 +178,5 @@ def _draw_board(axes: plt.Axes, geo: Geometry) -> None:
                 ha="center",
                 va="top",
                 fontsize=7,
-                color="#777",
+                color=style.color("column_label.color"),
             )

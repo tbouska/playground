@@ -11,10 +11,11 @@ from breadboard.components.base import (
 )
 from breadboard.geometry import Geometry
 from breadboard.model import Component
+from breadboard.style import Style
 
 
 @register("capacitor")
-def _capacitor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw a ceramic (disc) or electrolytic (striped cylinder) capacitor."""
     p1, p2 = geo.hole(component.legs[0]), geo.hole(component.legs[1])
     ux, uy, nx, ny, mx, my, length = _leg_frame(p1, p2)
@@ -24,7 +25,7 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
     if polar:
         body_half = min(0.34 * length, 0.5)
         width = 0.34
-        e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half)
+        e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half, style)
         axes.add_patch(
             Polygon(
                 _body_quad(e1, e2, nx, ny, width),
@@ -46,7 +47,7 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
         )
     else:
         body_half = min(0.28 * length, 0.36)
-        e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half)
+        e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half, style)
         axes.add_patch(
             Circle(
                 ((e1[0] + e2[0]) / 2, (e1[1] + e2[1]) / 2),
@@ -54,5 +55,5 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
                 linewidth=1.0, zorder=4,
             )
         )
-    _leg_dots(axes, p1, p2)
-    _part_label(axes, mx, my, nx, ny, component.ref, component.value)
+    _leg_dots(axes, style, p1, p2)
+    _part_label(axes, mx, my, nx, ny, component.ref, component.value, style)

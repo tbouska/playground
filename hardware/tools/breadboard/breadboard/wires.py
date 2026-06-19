@@ -5,7 +5,7 @@ from matplotlib.patches import Circle
 
 from breadboard.geometry import Geometry
 from breadboard.model import Component
-from breadboard.style import DOT_RADIUS, HOP_RADIUS
+from breadboard.style import Style
 
 
 def _block_rects(
@@ -109,7 +109,7 @@ def _wire_points(
 
 
 def _hop_polyline(
-    xa: float, xb: float, y: float, crossings: list[float], steps: int = 8
+    xa: float, xb: float, y: float, crossings: list[float], hop_radius: float, steps: int = 8
 ) -> tuple[list[float], list[float]]:
     """Horizontal run ``xa->xb`` at ``y`` that bumps over each crossing x."""
     rightward = xb >= xa
@@ -118,8 +118,8 @@ def _hop_polyline(
     for cx in ordered:
         for step in range(steps + 1):
             theta = math.pi * (1 - step / steps if rightward else step / steps)
-            xs.append(cx + HOP_RADIUS * math.cos(theta))
-            ys.append(y + HOP_RADIUS * math.sin(theta))
+            xs.append(cx + hop_radius * math.cos(theta))
+            ys.append(y + hop_radius * math.sin(theta))
     xs.append(xb)
     ys.append(y)
     return xs, ys
@@ -130,6 +130,7 @@ def _draw_wire(
     component: Component,
     points: list[tuple[float, float]],
     verticals: list[tuple[float, float, float, int]],
+    style: Style,
 ) -> None:
     """Draw one wire's polyline, hopping its horizontal runs over verticals."""
     for (xa, ya), (xb, yb) in zip(points, points[1:]):
@@ -143,12 +144,12 @@ def _draw_wire(
                 and min(xa, xb) + 1e-6 < vx < max(xa, xb) - 1e-6
                 and vlo + 1e-6 < ya < vhi - 1e-6
             )
-            xs, ys = _hop_polyline(xa, xb, ya, crossings)
+            xs, ys = _hop_polyline(xa, xb, ya, crossings, style.dim("hop.radius"))
         axes.plot(
             xs,
             ys,
             color=component.color,
-            linewidth=2.0,
+            linewidth=style.dim("wire.width"),
             solid_capstyle="round",
             solid_joinstyle="round",
             zorder=3.5,
@@ -157,7 +158,7 @@ def _draw_wire(
     for hx, hy in (points[0], points[-1]):
         axes.add_patch(
             Circle(
-                (hx, hy), DOT_RADIUS, facecolor=component.color, edgecolor="none", zorder=5
+                (hx, hy), style.dim("dot.radius"), facecolor=component.color, edgecolor="none", zorder=5
             )
         )
 
@@ -167,6 +168,7 @@ def _draw_wires(
     geo: Geometry,
     components: tuple[Component, ...],
     channels: dict[int, float],
+    style: Style,
 ) -> None:
     """Draw every wire, annotating non-connecting crossings with hop bumps."""
     paths = [
@@ -180,4 +182,4 @@ def _draw_wires(
             if abs(xa - xb) < 1e-9:
                 verticals.append((xa, min(ya, yb), max(ya, yb), id(component)))
     for component, points in paths:
-        _draw_wire(axes, component, points, verticals)
+        _draw_wire(axes, component, points, verticals, style)

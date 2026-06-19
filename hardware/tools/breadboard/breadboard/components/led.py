@@ -7,7 +7,7 @@ from breadboard.components import register
 from breadboard.components.base import _leg_dots, _tint
 from breadboard.geometry import Geometry
 from breadboard.model import Component
-from breadboard.style import CHANNEL_COLORS, LABEL_BBOX
+from breadboard.style import Style
 
 
 def _led_lens(axes: plt.Axes, cx: float, cy: float, radius: float, fill: str) -> None:
@@ -45,19 +45,19 @@ def _led_lens(axes: plt.Axes, cx: float, cy: float, radius: float, fill: str) ->
 
 
 @register("led", "led-rgb")
-def _led(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _led(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw an RGB LED (named legs) or a single LED (two ordered legs)."""
     if component.named_legs:
         leads = [
-            (CHANNEL_COLORS.get(name, "#888"), geo.hole(hole))
+            (style.channel_colors.get(name, style.color("led.fallback")), geo.hole(hole))
             for name, hole in component.named_legs.items()
         ]
         lens_fill = "#f6d9d2"
         caption = f"{component.ref} RGB ({'CC' if component.common == 'cathode' else 'CA'})"
     else:
         leads = [
-            ("#888", geo.hole(component.legs[0])),
-            ("#888", geo.hole(component.legs[1])),
+            (style.color("led.fallback"), geo.hole(component.legs[0])),
+            (style.color("led.fallback"), geo.hole(component.legs[1])),
         ]
         lens_fill = _tint(component.color)
         caption = component.ref
@@ -67,10 +67,10 @@ def _led(axes: plt.Axes, geo: Geometry, component: Component) -> None:
     radius = 0.5
     for color, (hx, hy) in leads:
         axes.plot([hx, cx], [hy, cy], color=color, linewidth=1.6, zorder=3)
-    _leg_dots(axes, *holes)
+    _leg_dots(axes, style, *holes)
     _led_lens(axes, cx, cy, radius, lens_fill)
     axes.text(
         cx, cy + radius + 0.28, caption,
         ha="center", va="bottom", fontsize=8.0, fontweight="bold",
-        color="#1f1f1f", zorder=6, bbox=LABEL_BBOX,
+        color=style.color("label.ref"), zorder=6, bbox=style.label_bbox,
     )

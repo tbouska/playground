@@ -4,11 +4,11 @@ from matplotlib.patches import Circle, Rectangle
 from breadboard.components import register
 from breadboard.geometry import Geometry
 from breadboard.model import Component
-from breadboard.style import DOT_RADIUS
+from breadboard.style import Style
 
 
 @register("module", "power")
-def _block(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw a module or power block spanning its pin rows across the banks."""
     first, last = component.span
     if component.pins:
@@ -66,7 +66,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component) -> None:
         axes.add_patch(
             Circle(
                 (px, py),
-                DOT_RADIUS,
+                style.dim("dot.radius"),
                 facecolor="#ffd166",
                 edgecolor="#39424a",
                 linewidth=0.6,

@@ -2,8 +2,9 @@ from typing import Callable
 from matplotlib.axes import Axes
 from breadboard.geometry import Geometry
 from breadboard.model import Component
+from breadboard.style import Style
 
-Drawer = Callable[[Axes, Geometry, Component], None]
+Drawer = Callable[[Axes, Geometry, Component, Style], None]
 
 _REGISTRY: dict[str, Drawer] = {}
 

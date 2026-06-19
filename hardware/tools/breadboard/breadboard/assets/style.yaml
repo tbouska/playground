@@ -9,6 +9,7 @@ board:
 rail:
   plus: "#c0392b"
   minus: "#2c5fb3"
+  width: 1.2
 hole:
   fill: "#dcd6ca"
   edge: "#a59e8c"

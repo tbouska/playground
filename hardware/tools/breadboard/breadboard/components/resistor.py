@@ -13,12 +13,7 @@ from breadboard.components.base import (
 )
 from breadboard.geometry import Geometry
 from breadboard.model import Component
-from breadboard.style import (
-    BODY_COLOR,
-    RESISTOR_DIGIT_COLORS,
-    RESISTOR_MULTIPLIER_EXTRA,
-    RESISTOR_TOLERANCE,
-)
+from breadboard.style import Style
 
 
 def _parse_ohms(value: str) -> float | None:
@@ -51,7 +46,7 @@ def _format_ohms(value: str) -> str:
     return f"{ohms:g} Ω"
 
 
-def _resistor_bands(value: str) -> list[str] | None:
+def _resistor_bands(value: str, style: Style) -> list[str] | None:
     """Five-band colour code (three digits, multiplier, tolerance) for a value."""
     ohms = _parse_ohms(value)
     if ohms is None or ohms <= 0:
@@ -63,37 +58,39 @@ def _resistor_bands(value: str) -> list[str] | None:
         exponent += 1
     digits = (mantissa // 100, (mantissa // 10) % 10, mantissa % 10)
     multiplier = exponent - 2
+    digit_colors = style.resistor_digit_colors
+    multiplier_extra = style.resistor_multiplier_extra
     if 0 <= multiplier <= 9:
-        multiplier_color = RESISTOR_DIGIT_COLORS[multiplier]
-    elif multiplier in RESISTOR_MULTIPLIER_EXTRA:
-        multiplier_color = RESISTOR_MULTIPLIER_EXTRA[multiplier]
+        multiplier_color = digit_colors[multiplier]
+    elif multiplier in multiplier_extra:
+        multiplier_color = multiplier_extra[multiplier]
     else:
         return None
-    return [RESISTOR_DIGIT_COLORS[d] for d in digits] + [
+    return [digit_colors[d] for d in digits] + [
         multiplier_color,
-        RESISTOR_TOLERANCE,
+        style.color("resistor.tolerance"),
     ]
 
 
 @register("resistor")
-def _resistor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _resistor(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw a resistor: leads, tan body, colour-code bands and labels."""
     p1, p2 = geo.hole(component.legs[0]), geo.hole(component.legs[1])
     ux, uy, nx, ny, mx, my, length = _leg_frame(p1, p2)
     body_half = min(0.32 * length, 0.55)
     width = 0.22
-    e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half)
+    e1, e2 = _draw_leads(axes, p1, p2, ux, uy, body_half, style)
     axes.add_patch(
         Polygon(
             _body_quad(e1, e2, nx, ny, width),
             closed=True,
-            facecolor=BODY_COLOR,
-            edgecolor="#7a7466",
-            linewidth=1.0,
+            facecolor=style.color("resistor.body"),
+            edgecolor=style.color("resistor.body_edge"),
+            linewidth=style.dim("resistor.body_edge_width"),
             zorder=4,
         )
     )
-    bands = _resistor_bands(component.value)
+    bands = _resistor_bands(component.value, style)
     if bands:
         band_w = body_half * 0.12
         for index, color in enumerate(bands):
@@ -111,5 +108,5 @@ def _resistor(axes: plt.Axes, geo: Geometry, component: Component) -> None:
                     zorder=4.5,
                 )
             )
-    _leg_dots(axes, p1, p2)
-    _part_label(axes, mx, my, nx, ny, component.ref, _format_ohms(component.value))
+    _leg_dots(axes, style, p1, p2)
+    _part_label(axes, mx, my, nx, ny, component.ref, _format_ohms(component.value), style)

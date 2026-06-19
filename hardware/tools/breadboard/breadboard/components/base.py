@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgb
 from matplotlib.patches import Circle
 
-from breadboard.style import DOT_RADIUS, LABEL_BBOX
+from breadboard.style import Style
 
 
 def _leg_frame(
@@ -25,39 +25,40 @@ def _draw_leads(
     ux: float,
     uy: float,
     body_half: float,
+    style: Style,
 ) -> tuple[tuple[float, float], tuple[float, float]]:
     """Draw the two lead wires up to the body; return the body end points."""
     mx, my = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
     e1 = (mx - ux * body_half, my - uy * body_half)
     e2 = (mx + ux * body_half, my + uy * body_half)
-    axes.plot([p1[0], e1[0]], [p1[1], e1[1]], color="#555", linewidth=1.4, zorder=3)
-    axes.plot([p2[0], e2[0]], [p2[1], e2[1]], color="#555", linewidth=1.4, zorder=3)
+    axes.plot([p1[0], e1[0]], [p1[1], e1[1]], color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3)
+    axes.plot([p2[0], e2[0]], [p2[1], e2[1]], color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3)
     return e1, e2
 
 
-def _leg_dots(axes: plt.Axes, *holes: tuple[float, float]) -> None:
+def _leg_dots(axes: plt.Axes, style: Style, *holes: tuple[float, float]) -> None:
     """Mark each connection hole with a dot the same weight as wire ends."""
     for hx, hy in holes:
         axes.add_patch(
-            Circle((hx, hy), DOT_RADIUS, facecolor="#444", edgecolor="none", zorder=5)
+            Circle((hx, hy), style.dim("dot.radius"), facecolor=style.color("dot.fill"), edgecolor="none", zorder=5)
         )
 
 
 def _part_label(
-    axes: plt.Axes, x: float, y: float, nx: float, ny: float, ref: str, value: str
+    axes: plt.Axes, x: float, y: float, nx: float, ny: float, ref: str, value: str, style: Style
 ) -> None:
     """Print a part's reference (heavier) above its value (lighter)."""
     if value:
         axes.text(
             x + nx * 0.5, y + ny * 0.5, value,
-            ha="center", va="center", fontsize=6.8, color="#5a5a5a",
-            zorder=6, bbox=LABEL_BBOX,
+            ha="center", va="center", fontsize=6.8, color=style.color("label.value"),
+            zorder=6, bbox=style.label_bbox,
         )
     if ref:
         axes.text(
             x + nx * 0.92, y + ny * 0.92, ref,
             ha="center", va="center", fontsize=8.5, fontweight="bold",
-            color="#1f1f1f", zorder=6, bbox=LABEL_BBOX,
+            color=style.color("label.ref"), zorder=6, bbox=style.label_bbox,
         )
 
 

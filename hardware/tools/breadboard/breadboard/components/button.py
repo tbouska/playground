@@ -5,11 +5,11 @@ from breadboard.components import register
 from breadboard.components.base import _leg_dots
 from breadboard.geometry import Geometry
 from breadboard.model import Component
-from breadboard.style import LABEL_BBOX
+from breadboard.style import Style
 
 
 @register("button")
-def _button(axes: plt.Axes, geo: Geometry, component: Component) -> None:
+def _button(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     """Draw a pushbutton: a square housing with a round plunger over its legs."""
     holes = [geo.hole(leg) for leg in component.legs]
     xs = [hx for hx, _ in holes]
@@ -28,10 +28,10 @@ def _button(axes: plt.Axes, geo: Geometry, component: Component) -> None:
         Circle((cx, cy), min(x1 - x0, y1 - y0) * 0.28,
                facecolor="#a8302f", edgecolor="#5e1817", linewidth=1.0, zorder=5)
     )
-    _leg_dots(axes, *holes)
+    _leg_dots(axes, style, *holes)
     axes.text(
         cx, y1 + 0.2,
         " ".join(p for p in (component.ref, component.value) if p),
         ha="center", va="bottom", fontsize=8.0, fontweight="bold",
-        color="#1f1f1f", zorder=6, bbox=LABEL_BBOX,
+        color=style.color("label.ref"), zorder=6, bbox=style.label_bbox,
     )

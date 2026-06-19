@@ -14,13 +14,13 @@ from breadboard.board import _draw_board
 from breadboard.components import get_drawer
 from breadboard.geometry import Geometry
 from breadboard.model import Layout
-from breadboard.style import RENDER_DPI
+from breadboard.style import Style, load_style
 from breadboard.wires import _draw_wires, _wire_channels
 
 _LOG = logging.getLogger("breadboard")
 
 
-def render(layout: Layout, out_stem: Path) -> None:
+def render(layout: Layout, out_stem: Path, style: Style | None = None) -> None:
     """Render a layout to ``<stem>.svg`` and ``<stem>.png``.
 
     :param layout: The layout to render.
@@ -30,13 +30,15 @@ def render(layout: Layout, out_stem: Path) -> None:
     :returns: None. The function writes the two image files to disk.
     :rtype: None
     """
+    if style is None:
+        style = load_style()
     geo = Geometry(layout.columns)
     width = max(8.0, layout.columns * 0.42)
     figure, axes = plt.subplots(figsize=(width, 6.5))
-    _draw_board(axes, geo)
+    _draw_board(axes, geo, style)
 
     channels = _wire_channels(geo, layout.components)
-    _draw_wires(axes, geo, layout.components, channels)
+    _draw_wires(axes, geo, layout.components, channels, style)
     for component in layout.components:
         if component.kind == "wire":
             continue  # wires are drawn by _draw_wires, not the component registry
@@ -44,13 +46,13 @@ def render(layout: Layout, out_stem: Path) -> None:
         if drawer is None:
             _LOG.warning("unknown component kind %r; skipping", component.kind)
             continue
-        drawer(axes, geo, component)
+        drawer(axes, geo, component, style)
 
-    axes.set_title(layout.title, fontsize=12, color="#222")
+    axes.set_title(layout.title, fontsize=12, color=style.color("title.color"))
     axes.set_aspect("equal")
     axes.axis("off")
     axes.autoscale_view()
     figure.tight_layout()
     figure.savefig(out_stem.with_suffix(".svg"))
-    figure.savefig(out_stem.with_suffix(".png"), dpi=RENDER_DPI)
+    figure.savefig(out_stem.with_suffix(".png"), dpi=style.dim("render.dpi"))
     plt.close(figure)
