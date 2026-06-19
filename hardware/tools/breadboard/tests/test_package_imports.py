@@ -87,3 +87,20 @@ def test_component_base_helpers_importable() -> None:
     assert _part_label is not None
     assert _body_quad is not None
     assert _tint is not None
+
+
+def test_render_symbol_importable() -> None:
+    from breadboard.render import render
+
+    assert render is not None
+
+
+def test_entry_shim_reexports_package_functions() -> None:
+    """render_layout.py is a thin shim: its ``render`` and ``load_layout`` are
+    the package functions themselves, not local copies that could drift."""
+    import breadboard.parse
+    import breadboard.render
+    import render_layout
+
+    assert render_layout.render is breadboard.render.render
+    assert render_layout.load_layout is breadboard.parse.load_layout
