@@ -38,6 +38,8 @@ def render(layout: Layout, out_stem: Path) -> None:
     channels = _wire_channels(geo, layout.components)
     _draw_wires(axes, geo, layout.components, channels)
     for component in layout.components:
+        if component.kind == "wire":
+            continue  # wires are drawn by _draw_wires, not the component registry
         drawer = get_drawer(component.kind)
         if drawer is None:
             _LOG.warning("unknown component kind %r; skipping", component.kind)
