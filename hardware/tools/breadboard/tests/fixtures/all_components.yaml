@@ -1,0 +1,71 @@
+# Fixture that exercises every supported component kind.
+# One instance of each kind, placed on non-overlapping holes.
+# Board is 25 columns wide to give all components room.
+
+title: All components fixture
+breadboard:
+  columns: 25
+
+components:
+  - kind: resistor
+    ref: R1
+    value: "220"
+    legs: ["A2", "A4"]
+
+  - kind: led
+    ref: D1
+    color: red
+    legs: ["B2", "B4"]
+
+  - kind: led-rgb
+    ref: D2
+    common: cathode
+    legs:
+      R: "C2"
+      K: "C3"
+      G: "C4"
+      B: "C5"
+
+  - kind: capacitor
+    ref: C1
+    value: "100n"
+    common: ""
+    legs: ["D2", "D4"]
+
+  - kind: diode
+    ref: D3
+    value: "1N4148"
+    legs: ["E2", "E4"]
+
+  - kind: transistor
+    ref: Q1
+    value: "2N2222"
+    legs: ["F3", "F4", "F5"]
+
+  - kind: button
+    ref: SW1
+    value: "PUSH"
+    legs: ["G2", "G3", "H2", "H3"]
+
+  - kind: module
+    ref: U1
+    label: Arduino Nano
+    span: [10, 14]
+    pins:
+      - { name: "VCC", hole: "A10" }
+      - { name: "GND", hole: "A14" }
+      - { name: "D2",  hole: "J10" }
+      - { name: "D3",  hole: "J14" }
+
+  - kind: power
+    ref: PS1
+    label: 5V Rail
+    span: [17, 20]
+    pins:
+      - { name: "5V",  hole: "A17" }
+      - { name: "GND", hole: "A20" }
+
+  - kind: wire
+    color: red
+    from: "B10"
+    to: "T+10"
