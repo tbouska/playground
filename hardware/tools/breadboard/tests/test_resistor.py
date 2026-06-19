@@ -8,6 +8,7 @@ were captured by running the functions and hard-coding their exact output.
 import pytest
 
 from breadboard.components.resistor import _format_ohms, _parse_ohms, _resistor_bands
+from breadboard.style import load_style
 
 
 # ---------------------------------------------------------------------------
@@ -86,28 +87,66 @@ def test_format_ohms_invalid_returns_raw_unchanged(value: str) -> None:
 # _resistor_bands
 # ---------------------------------------------------------------------------
 
-def test_resistor_bands_220_five_element_list() -> None:
-    result = _resistor_bands("220")
-    assert result == ["#c0392b", "#c0392b", "#1a1a1a", "#1a1a1a", "#7a4a1e"]
+def test_resistor_bands_algorithm_over_diverse_values() -> None:
+    # Exercises the real digit/multiplier math, not a per-input lookup: positive
+    # multipliers (digit_colors), gold/silver extras, and the mantissa>=1000
+    # carry branch. Each expected list is built from the style's own accessors
+    # (intent), so a hardcoded-hex implementation cannot pass.
+    style = load_style()
+    dc = style.resistor_digit_colors
+    me = style.resistor_multiplier_extra
+    tol = style.color("resistor.tolerance")
+    cases = [
+        ("220", [dc[2], dc[2], dc[0], dc[0], tol]),
+        ("4.7k", [dc[4], dc[7], dc[0], dc[1], tol]),
+        ("10k", [dc[1], dc[0], dc[0], dc[2], tol]),
+        ("1M", [dc[1], dc[0], dc[0], dc[4], tol]),
+        ("47", [dc[4], dc[7], dc[0], me[-1], tol]),  # exponent -1 -> gold
+        ("4.7", [dc[4], dc[7], dc[0], me[-2], tol]),  # exponent -2 -> silver
+        ("9996", [dc[1], dc[0], dc[0], dc[2], tol]),  # rounds up via the mantissa>=1000 carry branch
+    ]
+    for value, expected in cases:
+        assert _resistor_bands(value, style) == expected, value
 
 
-def test_resistor_bands_sub_100_ohm_uses_gold_multiplier() -> None:
-    # 47 Ω: multiplier exponent is -1, which maps to gold (#cda434).
-    result = _resistor_bands("47")
-    assert result == ["#f1c40f", "#8e44ad", "#1a1a1a", "#cda434", "#7a4a1e"]
+def test_resistor_bands_multiplier_out_of_range_returns_none() -> None:
+    # 1e12 Ω: multiplier exponent 10 is past the 0-9 digit range and not in the
+    # gold/silver extras, so the real algorithm returns None. A lookup table
+    # keyed on the tested inputs above cannot anticipate this rejection.
+    style = load_style()
+    assert _resistor_bands("1000000m", style) is None
 
 
-def test_resistor_bands_sub_10_ohm_uses_silver_multiplier() -> None:
-    # 4.7 Ω: multiplier exponent is -2, which maps to silver (#bfc1c2). Same
-    # significant digits as the 47 Ω gold case above; only the multiplier band
-    # differs (gold #cda434 -> silver #bfc1c2).
-    result = _resistor_bands("4.7")
-    assert result == ["#f1c40f", "#8e44ad", "#1a1a1a", "#bfc1c2", "#7a4a1e"]
+def test_resistor_bands_reads_colors_from_passed_style() -> None:
+    # A hardcoded-default implementation would pass every test above, because
+    # the default palette equals the old baked-in constants. Override the digit
+    # palette so the returned bands MUST come from the passed style, not from
+    # inline hex. "220" -> digits 2,2,0; multiplier exponent 0 -> digit_colors[0].
+    style = load_style(
+        inline={
+            "resistor": {
+                "digit_colors": [
+                    "#000000", "#111111", "#222222", "#333333", "#444444",
+                    "#555555", "#666666", "#777777", "#888888", "#999999",
+                ],
+            },
+        },
+    )
+    result = _resistor_bands("220", style)
+    assert result == [
+        "#222222",
+        "#222222",
+        "#000000",
+        "#000000",
+        style.color("resistor.tolerance"),
+    ]
 
 
 def test_resistor_bands_zero_returns_none() -> None:
-    assert _resistor_bands("0") is None
+    style = load_style()
+    assert _resistor_bands("0", style) is None
 
 
 def test_resistor_bands_invalid_returns_none() -> None:
-    assert _resistor_bands("abc") is None
+    style = load_style()
+    assert _resistor_bands("abc", style) is None

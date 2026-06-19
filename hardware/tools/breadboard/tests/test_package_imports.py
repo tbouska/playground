@@ -26,12 +26,11 @@ def test_model_symbols_importable() -> None:
     assert Pin is not None
 
 
-def test_style_constants_importable() -> None:
-    from breadboard.style import RENDER_DPI, HOLE_RADIUS, BOARD_COLOR
+def test_style_loader_importable() -> None:
+    from breadboard.style import Style, load_style
 
-    assert RENDER_DPI is not None
-    assert HOLE_RADIUS is not None
-    assert BOARD_COLOR is not None
+    assert Style is not None
+    assert load_style is not None
 
 
 def test_package_exposes_version_string() -> None:
