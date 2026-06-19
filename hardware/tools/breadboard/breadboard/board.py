@@ -1,5 +1,3 @@
-"""Board background drawing helper."""
-
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Rectangle
 

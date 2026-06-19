@@ -1,5 +1,3 @@
-"""Wire routing and drawing helpers."""
-
 import math
 
 import matplotlib.pyplot as plt

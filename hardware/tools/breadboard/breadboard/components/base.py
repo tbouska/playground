@@ -1,5 +1,3 @@
-"""Base drawing helpers shared by component drawers."""
-
 import math
 
 import matplotlib.pyplot as plt
