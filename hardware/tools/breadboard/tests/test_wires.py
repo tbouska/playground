@@ -16,7 +16,7 @@ import breadboard.wires as r
 
 def test_hop_polyline_no_crossing_is_straight_segment() -> None:
     """Zero crossings returns exactly the two endpoints, nothing inserted."""
-    xs, ys = r._hop_polyline(1.0, 5.0, -7.0, [])
+    xs, ys = r._hop_polyline(1.0, 5.0, -7.0, [], 0.22)
     assert len(xs) == 2
     assert len(ys) == 2
     assert xs == [1.0, 5.0]
@@ -29,11 +29,11 @@ def test_hop_polyline_adds_steps_plus_one_vertices_per_crossing() -> None:
     Formula: total = 2 (endpoints) + N * (steps + 1).
     Verified by running the function with 0, 1, and 2 crossings.
     """
-    xs1, ys1 = r._hop_polyline(1.0, 5.0, -7.0, [3.0])
+    xs1, ys1 = r._hop_polyline(1.0, 5.0, -7.0, [3.0], 0.22)
     assert len(xs1) == 11  # 2 + 1*9
     assert len(ys1) == 11
 
-    xs2, ys2 = r._hop_polyline(1.0, 5.0, -7.0, [2.0, 4.0])
+    xs2, ys2 = r._hop_polyline(1.0, 5.0, -7.0, [2.0, 4.0], 0.22)
     assert len(xs2) == 20  # 2 + 2*9
     assert len(ys2) == 20
 
