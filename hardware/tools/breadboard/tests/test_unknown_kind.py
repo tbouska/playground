@@ -34,9 +34,22 @@ def test_render_logs_warning_for_unknown_kind(tmp_path, caplog) -> None:
         for r in caplog.records
         if r.levelno >= logging.WARNING and "unknown component kind" in r.getMessage()
     ]
-    assert warnings, (
-        "expected a WARNING containing 'unknown component kind'; "
-        f"got records: {[r.getMessage() for r in caplog.records]}"
+    # Exactly one unknown-kind warning: the layout has one unknown component.
+    # More than one means the renderer also warns on the KNOWN resistor.
+    assert len(warnings) == 1, (
+        "expected exactly one WARNING containing 'unknown component kind' "
+        "(the single 'frobnicator' component); "
+        f"got: {warnings}"
+    )
+    # The warning must name the UNKNOWN kind specifically, not fire generically.
+    assert "frobnicator" in warnings[0], (
+        "expected the 'unknown component kind' WARNING to name the unknown kind "
+        f"'frobnicator'; got: {warnings[0]!r}"
+    )
+    # The KNOWN kind must stay silent: no unknown-kind warning may mention it.
+    assert not any("resistor" in w for w in warnings), (
+        "the known 'resistor' kind must not trigger an 'unknown component kind' "
+        f"WARNING; got: {warnings}"
     )
 
 
