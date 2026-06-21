@@ -142,3 +142,14 @@ relay:
   pin_edge_width: 0.6
   label: "white"
   pin_label: "white"
+seven_segment:
+  body: "#1c1c1c"
+  body_edge: "#000000"
+  body_edge_width: 1.0
+  segment: "#3a3a3a"
+  segment_edge: "#555555"
+  segment_edge_width: 0.8
+  dp: "#3a3a3a"
+  pin: "#cfcfcf"
+  pin_edge: "#555555"
+  pin_edge_width: 0.6
