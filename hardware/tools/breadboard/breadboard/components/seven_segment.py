@@ -60,10 +60,32 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
         rows = [geo.line_y[r] for r in "ABCDEFGHIJ"]
         y_top, y_bottom = max(rows), min(rows)
 
+    cx = (x_left + x_right) / 2.0
+    cy = (y_top + y_bottom) / 2.0
+    s = _DIGIT_SCALE
+
     bx = x_left - 0.4
     by = y_bottom - 0.3
     bw = (x_right - x_left) + 0.8
     bh = (y_top - y_bottom) + 0.6
+
+    # One figure-8 per digit position. A single digit sits at the body centre
+    # (output unchanged); multiple digits spread evenly across the body, which
+    # widens symmetrically about cx if the digit row would overflow its interior.
+    n_digits = max(1, component.digits)
+    if n_digits == 1:
+        digit_centers = [cx]
+    else:
+        pitch = (2.0 * _SX + 0.30) * s
+        row_w = pitch * (n_digits - 1)
+        needed = row_w + 2.0 * _SX * s
+        interior = bw - 0.8
+        if needed > interior:
+            extra = needed - interior
+            bx -= extra / 2.0
+            bw += extra
+        first_cx = cx - row_w / 2.0
+        digit_centers = [first_cx + i * pitch for i in range(n_digits)]
 
     axes.add_patch(
         Rectangle(
@@ -77,33 +99,30 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
         )
     )
 
-    cx = (x_left + x_right) / 2.0
-    cy = (y_top + y_bottom) / 2.0
-    s = _DIGIT_SCALE
+    for dcx in digit_centers:
+        for seg_verts in _SEGMENTS:
+            axes.add_patch(
+                Polygon(
+                    [(dcx + s * vx, cy + s * vy) for vx, vy in seg_verts],
+                    closed=True,
+                    facecolor=style.color("seven_segment.segment"),
+                    edgecolor=style.color("seven_segment.segment_edge"),
+                    linewidth=style.dim("seven_segment.segment_edge_width"),
+                    zorder=8,
+                )
+            )
 
-    for seg_verts in _SEGMENTS:
+        dp_x = dcx + s * _DP_CENTER[0]
+        dp_y = cy + s * _DP_CENTER[1]
         axes.add_patch(
-            Polygon(
-                [(cx + s * vx, cy + s * vy) for vx, vy in seg_verts],
-                closed=True,
-                facecolor=style.color("seven_segment.segment"),
-                edgecolor=style.color("seven_segment.segment_edge"),
-                linewidth=style.dim("seven_segment.segment_edge_width"),
+            Circle(
+                (dp_x, dp_y),
+                s * _DP_RADIUS,
+                facecolor=style.color("seven_segment.dp"),
+                edgecolor="none",
                 zorder=8,
             )
         )
-
-    dp_x = cx + s * _DP_CENTER[0]
-    dp_y = cy + s * _DP_CENTER[1]
-    axes.add_patch(
-        Circle(
-            (dp_x, dp_y),
-            s * _DP_RADIUS,
-            facecolor=style.color("seven_segment.dp"),
-            edgecolor="none",
-            zorder=8,
-        )
-    )
 
     if component.pins:
         for px, py in pin_coords:

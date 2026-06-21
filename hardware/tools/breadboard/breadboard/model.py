@@ -42,6 +42,8 @@ class Component:
     :vartype span: tuple[int, int]
     :ivar pins: The named pins of a module.
     :vartype pins: tuple[Pin, ...]
+    :ivar digits: The number of digit positions for a 7-segment display.
+    :vartype digits: int
     """
 
     kind: str
@@ -55,6 +57,7 @@ class Component:
     endpoints: tuple[str, str] = ("", "")
     span: tuple[int, int] = (0, 0)
     pins: tuple[Pin, ...] = ()
+    digits: int = 1
 
 
 @dataclass(frozen=True)

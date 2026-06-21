@@ -40,6 +40,7 @@ def _component_from_dict(data: dict[str, Any]) -> Component:
         endpoints=(str(data.get("from", "")), str(data.get("to", ""))),
         span=(int(span_raw[0]), int(span_raw[1])),
         pins=pins,
+        digits=int(data.get("digits", 1)),
     )
 
 
