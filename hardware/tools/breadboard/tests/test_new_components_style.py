@@ -135,3 +135,40 @@ def test_buzzer_style_key_read_from_style(
     assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
     # An explicit default-value override must produce the same render as no override.
     assert default_svg == same_svg, f"{label}: style default != render with no override"
+
+
+_POTENTIOMETER = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
+
+# (id, component, (section, key), default_value, wild_value)
+_POTENTIOMETER_STYLE_CASES = [
+    ("potentiometer-body-colour", _POTENTIOMETER, ("potentiometer", "body"), "#3a3f44", _SENTINEL),
+    ("potentiometer-body-edge-colour", _POTENTIOMETER, ("potentiometer", "body_edge"), "#1f2326", _SENTINEL),
+    ("potentiometer-body-edge-width", _POTENTIOMETER, ("potentiometer", "body_edge_width"), 1.0, 9.9),
+    ("potentiometer-knob-colour", _POTENTIOMETER, ("potentiometer", "knob"), "#c9ccce", _SENTINEL),
+    ("potentiometer-knob-edge-colour", _POTENTIOMETER, ("potentiometer", "knob_edge"), "#7f8589", _SENTINEL),
+    ("potentiometer-knob-edge-width", _POTENTIOMETER, ("potentiometer", "knob_edge_width"), 1.0, 9.9),
+    ("potentiometer-wiper-colour", _POTENTIOMETER, ("potentiometer", "wiper"), "#222222", _SENTINEL),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _POTENTIOMETER_STYLE_CASES,
+    ids=[case[0] for case in _POTENTIOMETER_STYLE_CASES],
+)
+def test_potentiometer_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # An explicit default-value override must produce the same render as no override.
+    assert default_svg == same_svg, f"{label}: style default != render with no override"

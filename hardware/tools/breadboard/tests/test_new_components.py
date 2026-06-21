@@ -58,3 +58,29 @@ def test_buzzer_polarity_follows_leg_order(tmp_path: Path) -> None:
     assert svg_fwd != svg_rev, (
         "buzzer polarity not enforced: reversing legs[0]/legs[1] produced identical SVG"
     )
+
+
+def test_potentiometer_renders_without_error(tmp_path: Path) -> None:
+    pot = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
+    layout = Layout(title="t", columns=10, components=(pot,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert svg, "potentiometer render produced an empty SVG"
+
+
+def test_potentiometer_wiper_follows_middle_leg(tmp_path: Path) -> None:
+    """The wiper tick points toward legs[1]; swapping which leg is the middle must move it."""
+    pot_d2_wiper = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
+    pot_d1_wiper = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D2", "D1", "D3"))
+
+    layout_d2 = Layout(title="t", columns=10, components=(pot_d2_wiper,), style=None)
+    render_layout.render(layout_d2, tmp_path / "d2wiper")
+    svg_d2 = _scrub((tmp_path / "d2wiper.svg").read_text(encoding="utf-8"))
+
+    layout_d1 = Layout(title="t", columns=10, components=(pot_d1_wiper,), style=None)
+    render_layout.render(layout_d1, tmp_path / "d1wiper")
+    svg_d1 = _scrub((tmp_path / "d1wiper.svg").read_text(encoding="utf-8"))
+
+    assert svg_d2 != svg_d1, (
+        "potentiometer wiper not enforced: changing legs[1] (wiper leg) produced identical SVG"
+    )

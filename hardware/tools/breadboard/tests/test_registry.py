@@ -53,3 +53,7 @@ def test_inductor_kind_resolves() -> None:
 
 def test_buzzer_kind_resolves() -> None:
     assert get_drawer("buzzer") is not None
+
+
+def test_potentiometer_kind_resolves() -> None:
+    assert get_drawer("potentiometer") is not None
