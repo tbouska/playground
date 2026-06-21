@@ -20,7 +20,6 @@ _W = 0.36   # half-width of a horizontal segment
 _SX = 0.40  # x half-extent of the digit
 _SY = 0.40  # y half-extent of the digit
 
-# Each segment: list of (x, y) corners (a convex quad).
 _SEGMENTS = [
     # a: top horizontal
     [(-_W, _SY - _T), (_W, _SY - _T), (_W, _SY + _T), (-_W, _SY + _T)],
@@ -79,7 +78,6 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
         )
     )
 
-    # Draw the 7-segment digit figure-8 centred on the body.
     cx = (x_left + x_right) / 2.0
     cy = (y_top + y_bottom) / 2.0
     s = _DIGIT_SCALE
