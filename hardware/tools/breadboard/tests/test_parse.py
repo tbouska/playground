@@ -19,7 +19,7 @@ def test_load_layout_parses_all_components_fixture() -> None:
     assert isinstance(layout, Layout)
     assert layout.title == "All components fixture"
     assert layout.columns == 25
-    assert len(layout.components) == 10
+    assert len(layout.components) == 16
 
 
 def test_loaded_layout_preserves_component_kinds() -> None:
@@ -38,6 +38,12 @@ def test_loaded_layout_preserves_component_kinds() -> None:
     assert "module" in kinds
     assert "power" in kinds
     assert "wire" in kinds
+    assert "crystal" in kinds
+    assert "inductor" in kinds
+    assert "buzzer" in kinds
+    assert "potentiometer" in kinds
+    assert "7segment" in kinds
+    assert "relay" in kinds
 
 
 def test_loaded_layout_module_component_has_correct_pins() -> None:

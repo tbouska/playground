@@ -65,6 +65,44 @@ components:
       - { name: "5V",  hole: "A17" }
       - { name: "GND", hole: "A20" }
 
+  - kind: crystal
+    ref: X1
+    value: "16MHz"
+    legs: ["A6", "A8"]
+
+  - kind: inductor
+    ref: L1
+    value: "10uH"
+    legs: ["B6", "B8"]
+
+  - kind: buzzer
+    ref: BZ1
+    legs: ["C6", "C8"]       # C6 is the + leg
+
+  - kind: potentiometer
+    ref: RV1
+    value: "10k"
+    legs: ["D6", "D7", "D8"] # D7 is the wiper
+
+  - kind: 7segment
+    ref: DS1
+    common: cathode
+    pins:
+      - { name: "a", hole: "F6" }
+      - { name: "b", hole: "F9" }
+      - { name: "g", hole: "J6" }
+      - { name: "dp", hole: "J9" }
+
+  - kind: relay
+    ref: K1
+    label: RELAY
+    span: [21, 24]
+    pins:
+      - { name: "VCC", hole: "A21" }
+      - { name: "GND", hole: "A24" }
+      - { name: "NO",  hole: "J21" }
+      - { name: "NC",  hole: "J24" }
+
   - kind: wire
     color: red
     from: "B10"
