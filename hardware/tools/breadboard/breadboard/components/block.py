@@ -8,7 +8,7 @@ from breadboard.style import Style
 
 
 @register("module", "power")
-def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
+def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, section: str = "block") -> None:
     """Draw a module or power block spanning its pin rows across the banks."""
     first, last = component.span
     if component.pins:
@@ -24,7 +24,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             (bx + 0.16, by - 0.22),
             bw,
             bh,
-            facecolor=style.color("block.shadow"),
+            facecolor=style.color(f"{section}.shadow"),
             edgecolor="none",
             alpha=0.4,
             zorder=6.6,
@@ -35,9 +35,9 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             (bx, by),
             bw,
             bh,
-            facecolor=style.color("block.body"),
-            edgecolor=style.color("block.body_edge"),
-            linewidth=style.dim("block.body_edge_width"),
+            facecolor=style.color(f"{section}.body"),
+            edgecolor=style.color(f"{section}.body_edge"),
+            linewidth=style.dim(f"{section}.body_edge_width"),
             zorder=7,
         )
     )
@@ -45,8 +45,8 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
     axes.plot(
         [bx, bx + bw],
         [by + bh, by + bh],
-        color=style.color("block.top_edge"),
-        linewidth=style.dim("block.top_edge_width"),
+        color=style.color(f"{section}.top_edge"),
+        linewidth=style.dim(f"{section}.top_edge_width"),
         zorder=7.1,
     )
     axes.text(
@@ -56,7 +56,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
         ha="center",
         va="center",
         fontsize=8.5,
-        color=style.color("block.label"),
+        color=style.color(f"{section}.label"),
         fontweight="bold",
         zorder=8,
     )
@@ -67,9 +67,9 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             Circle(
                 (px, py),
                 style.dim("dot.radius"),
-                facecolor=style.color("block.pin"),
-                edgecolor=style.color("block.body_edge"),
-                linewidth=style.dim("block.pin_edge_width"),
+                facecolor=style.color(f"{section}.pin"),
+                edgecolor=style.color(f"{section}.body_edge"),
+                linewidth=style.dim(f"{section}.pin_edge_width"),
                 zorder=9,
             )
         )
@@ -85,6 +85,6 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             rotation=90,
             fontsize=6.5,
             fontweight="bold",
-            color=style.color("block.pin_label"),
+            color=style.color(f"{section}.pin_label"),
             zorder=9,
         )
