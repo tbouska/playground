@@ -133,18 +133,20 @@ def test_seven_segment_empty_pins_warns_and_does_not_crash(tmp_path: Path, caplo
     assert svg_path.exists(), f"render() did not write {svg_path}"
     assert svg_path.stat().st_size > 0
 
-    pin_warnings = [
-        r.getMessage()
-        for r in caplog.records
-        if r.levelno >= logging.WARNING and "pin" in r.getMessage().lower()
+    all_warnings = [
+        r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
     ]
+    pin_warnings = [w for w in all_warnings if "pin" in w.lower()]
     assert pin_warnings, (
         "expected at least one WARNING referencing pins when 7segment has no pins; got none"
     )
-    # The warning must come from the drawer, not the generic dispatch loop.
-    assert not any("unknown component kind" in w for w in pin_warnings), (
-        "7segment IS a registered kind; the pin warning must not be the generic "
-        "'unknown component kind' message from the dispatch loop"
+    # 7segment IS a registered kind: it must reach its drawer (which warns about the
+    # missing pins), not fall through to the dispatch loop's "unknown kind" skip.
+    # Check the UNFILTERED warning list — filtering to "pin" first would always exclude
+    # the dispatch message ("unknown component kind ...") and make this assertion vacuous.
+    assert not any("unknown component kind" in w for w in all_warnings), (
+        "7segment IS a registered kind; it must not trigger the dispatch loop's "
+        "'unknown component kind' warning"
     )
 
 
