@@ -48,8 +48,7 @@ _DIGIT_SCALE = 0.55
 def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     if component.pins:
         pin_coords = [geo.hole(p.hole) for p in component.pins]
-        xs = [x for x, _ in pin_coords]
-        ys = [y for _, y in pin_coords]
+        xs, ys = zip(*pin_coords)
         y_top, y_bottom = max(ys), min(ys)
         x_left, x_right = min(xs), max(xs)
     else:
