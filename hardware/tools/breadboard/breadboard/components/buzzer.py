@@ -20,7 +20,6 @@ def draw_buzzer(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
     body_half = min(0.34 * length, 0.5)
     radius = 0.38
     _draw_leads(axes, p1, p2, ux, uy, body_half, style)
-    # Body: round can
     axes.add_patch(
         Circle(
             (mx, my),
@@ -31,7 +30,6 @@ def draw_buzzer(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
             zorder=4,
         )
     )
-    # Sound hole (small circle at centre)
     axes.add_patch(
         Circle(
             (mx, my),
@@ -41,7 +39,6 @@ def draw_buzzer(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
             zorder=5,
         )
     )
-    # + mark: placed between centre and p1 (legs[0] side)
     plus_x = (mx + p1[0]) / 2
     plus_y = (my + p1[1]) / 2
     axes.text(
