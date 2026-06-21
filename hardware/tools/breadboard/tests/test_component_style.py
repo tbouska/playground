@@ -1,12 +1,11 @@
-"""Per-component colour + LED lead-width style-sourcing tests.
+"""Per-component style-sourcing tests.
 
-Blind review (PRD 00003) C1/C2: the component body/decorative colours and the
-LED lead width were hardcoded literals in the drawers, violating Phase 1's "no
-palette/dimension hex or magic number remains inline". These tests lock the
-fix — each drawer must source its colour (and the LED its lead width) from the
-passed Style. Overriding a new style key must change the render; if a drawer
-ever regresses to an inline literal, the override stops taking effect and the
-matching test fails.
+Each drawer must read its colours and scalar dimensions (component line widths,
+the LED lead width, the label-halo pad) from the passed Style, not from inline
+literals. Overriding a style key must change the render; if a drawer regresses to
+an inline literal, the override stops taking effect and the matching test fails.
+The default style value must equal the historical inline literal so default
+output stays byte-identical (the render-parity suite is the hard gate).
 """
 
 import re
@@ -15,7 +14,7 @@ from pathlib import Path
 import pytest
 
 import render_layout
-from breadboard.model import Component, Layout
+from breadboard.model import Component, Layout, Pin
 from breadboard.style import load_style
 
 _SENTINEL = "#017fae"
@@ -119,3 +118,57 @@ def test_led_lead_width_read_from_style(tmp_path: Path) -> None:
     # out the "any two renders differ" trap (volatile bits already scrubbed).
     assert default_svg != thick_svg
     assert default_svg == same_svg
+
+
+_BLOCK = Component(kind="module", label="U1", span=(1, 3))
+_BLOCK_PINNED = Component(
+    kind="module", ref="U1", label="U1", span=(1, 3),
+    pins=(Pin(name="P1", hole="A1"), Pin(name="P2", hole="A3")),
+)
+_DIODE = Component(kind="diode", ref="D1", legs=("C1", "C3"))
+_CAP_POLAR = Component(kind="capacitor", ref="C1", common="polar", legs=("A1", "A3"))
+_CAP_CERAMIC = Component(kind="capacitor", ref="C2", legs=("B1", "B3"))
+_TRANSISTOR = Component(kind="transistor", ref="Q1", legs=("D1", "D2", "D3"))
+_BUTTON = Component(kind="button", ref="SW1", legs=("E1", "E3"))
+_LED = Component(kind="led-rgb", ref="L1", named_legs={"R": "F1", "G": "F2", "B": "F3"})
+
+# (id, component, (section, key), default value baked in today, a wild override)
+_STYLE_SOURCING_CASES = [
+    ("diode-body-edge-width", _DIODE, ("diode", "body_edge_width"), 1.0, 9.9),
+    ("block-body-edge-width", _BLOCK, ("block", "body_edge_width"), 1.0, 9.9),
+    ("block-top-edge-width", _BLOCK, ("block", "top_edge_width"), 1.6, 9.9),
+    ("block-pin-edge-width", _BLOCK_PINNED, ("block", "pin_edge_width"), 0.6, 9.9),
+    ("led-lens-edge-width", _LED, ("led", "lens_edge_width"), 1.2, 9.9),
+    ("cap-polar-edge-width", _CAP_POLAR, ("capacitor", "polar_body_edge_width"), 1.0, 9.9),
+    ("cap-ceramic-edge-width", _CAP_CERAMIC, ("capacitor", "ceramic_body_edge_width"), 1.0, 9.9),
+    ("transistor-body-edge-width", _TRANSISTOR, ("transistor", "body_edge_width"), 1.0, 9.9),
+    ("button-housing-edge-width", _BUTTON, ("button", "housing_edge_width"), 1.0, 9.9),
+    ("button-plunger-edge-width", _BUTTON, ("button", "plunger_edge_width"), 1.0, 9.9),
+    ("block-label-colour", _BLOCK, ("block", "label"), "white", _SENTINEL),
+    ("block-pin-label-colour", _BLOCK_PINNED, ("block", "pin_label"), "white", _SENTINEL),
+    ("led-highlight-colour", _LED, ("led", "highlight"), "white", _SENTINEL),
+    ("label-halo-pad", _LED, ("label", "halo_pad"), 0.18, 0.99),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _STYLE_SOURCING_CASES,
+    ids=[case[0] for case in _STYLE_SOURCING_CASES],
+)
+def test_component_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # The style default must equal the historical inline literal -> parity holds.
+    assert default_svg == same_svg, f"{label}: style default != historical inline literal"
