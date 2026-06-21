@@ -45,3 +45,7 @@ def test_register_multiple_kinds_maps_all_to_same_drawer() -> None:
 
 def test_crystal_kind_resolves() -> None:
     assert get_drawer("crystal") is not None
+
+
+def test_inductor_kind_resolves() -> None:
+    assert get_drawer("inductor") is not None

@@ -16,3 +16,11 @@ def test_crystal_renders_without_error(tmp_path: Path) -> None:
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
     assert svg, "crystal render produced an empty SVG"
+
+
+def test_inductor_renders_without_error(tmp_path: Path) -> None:
+    inductor = Component(kind="inductor", ref="L1", value="10uH", legs=("A1", "A3"))
+    layout = Layout(title="t", columns=10, components=(inductor,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert svg, "inductor render produced an empty SVG"

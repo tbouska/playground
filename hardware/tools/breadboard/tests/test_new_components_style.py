@@ -65,3 +65,38 @@ def test_crystal_style_key_read_from_style(
     assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
     # An explicit default-value override must produce the same render as no override.
     assert default_svg == same_svg, f"{label}: style default != render with no override"
+
+
+_INDUCTOR = Component(kind="inductor", ref="L1", value="10uH", legs=("A1", "A3"))
+
+# (id, component, (section, key), default_value, wild_value)
+_INDUCTOR_STYLE_CASES = [
+    ("inductor-coil-colour", _INDUCTOR, ("inductor", "coil"), "#6b5430", _SENTINEL),
+    ("inductor-coil-width", _INDUCTOR, ("inductor", "coil_width"), 1.6, 9.9),
+    ("inductor-body-colour", _INDUCTOR, ("inductor", "body"), "#efe7d6", _SENTINEL),
+    ("inductor-body-edge-colour", _INDUCTOR, ("inductor", "body_edge"), "#9a8f78", _SENTINEL),
+    ("inductor-body-edge-width", _INDUCTOR, ("inductor", "body_edge_width"), 1.0, 9.9),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _INDUCTOR_STYLE_CASES,
+    ids=[case[0] for case in _INDUCTOR_STYLE_CASES],
+)
+def test_inductor_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # An explicit default-value override must produce the same render as no override.
+    assert default_svg == same_svg, f"{label}: style default != render with no override"
