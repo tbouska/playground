@@ -34,13 +34,13 @@ def _coil_polyline(
     ys: list[float] = []
     for i in range(total_steps + 1):
         t = i / total_steps
-        ax = x1 + t * (x2 - x1)
-        ay = y1 + t * (y2 - y1)
+        cx = x1 + t * (x2 - x1)
+        cy = y1 + t * (y2 - y1)
         half_idx = i / steps_per_half
         side = 1 if int(half_idx) % 2 == 0 else -1
         bump = side * half_width * math.sin(math.pi * (i % steps_per_half) / steps_per_half)
-        xs.append(ax + nx * bump)
-        ys.append(ay + ny * bump)
+        xs.append(cx + nx * bump)
+        ys.append(cy + ny * bump)
     return xs, ys
 
 
