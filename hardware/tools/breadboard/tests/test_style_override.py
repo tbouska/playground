@@ -8,6 +8,7 @@ Covers:
 - Unknown override keys warn but don't crash render
 """
 
+import logging
 import sys
 from pathlib import Path
 
@@ -120,3 +121,42 @@ def test_cli_style_flag_applies_override(
 
     svg = layout_file.with_suffix(".svg").read_text(encoding="utf-8")
     assert path_fill in svg
+
+
+def test_wrong_shape_inline_override_falls_back(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # A scalar where a mapping is expected must warn and KEEP the default
+    # sub-tree, not clobber it -- clobbering crashed on later dotted access.
+    default_shadow = load_style().color("hole.shadow")
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        style = load_style(inline={"hole": "#000000"})
+
+    assert style.color("hole.shadow") == default_shadow
+    assert any("hole" in record.getMessage() for record in caplog.records)
+
+
+def test_wrong_shape_file_override_falls_back(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    default_shadow = load_style().color("hole.shadow")
+    override_file = tmp_path / "bad.yaml"
+    override_file.write_text(yaml.dump({"hole": "#000000"}), encoding="utf-8")
+
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        style = load_style(path=override_file)
+
+    assert style.color("hole.shadow") == default_shadow
+    assert any("hole" in record.getMessage() for record in caplog.records)
+
+
+def test_wrong_shape_mapping_for_scalar_default_falls_back(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Symmetric case: a mapping where a scalar is expected (rail.width is scalar).
+    default_width = load_style().dim("rail.width")
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        style = load_style(inline={"rail": {"width": {"nested": 1}}})
+
+    assert style.dim("rail.width") == default_width
+    assert any("rail.width" in record.getMessage() for record in caplog.records)
