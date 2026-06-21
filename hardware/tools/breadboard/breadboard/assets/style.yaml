@@ -117,3 +117,9 @@ inductor:
   body: "#efe7d6"
   body_edge: "#9a8f78"
   body_edge_width: 1.0
+buzzer:
+  body: "#2b2b2b"
+  body_edge: "#0f0f0f"
+  body_edge_width: 1.0
+  hole: "#6a6a6a"
+  plus: "#d8d8d8"
