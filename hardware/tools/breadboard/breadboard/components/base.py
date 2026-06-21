@@ -31,8 +31,14 @@ def _draw_leads(
     mx, my = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
     e1 = (mx - ux * body_half, my - uy * body_half)
     e2 = (mx + ux * body_half, my + uy * body_half)
-    axes.plot([p1[0], e1[0]], [p1[1], e1[1]], color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3)
-    axes.plot([p2[0], e2[0]], [p2[1], e2[1]], color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3)
+    axes.plot(
+        [p1[0], e1[0]], [p1[1], e1[1]],
+        color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3,
+    )
+    axes.plot(
+        [p2[0], e2[0]], [p2[1], e2[1]],
+        color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3,
+    )
     return e1, e2
 
 
@@ -40,7 +46,10 @@ def _leg_dots(axes: plt.Axes, style: Style, *holes: tuple[float, float]) -> None
     """Mark each connection hole with a dot the same weight as wire ends."""
     for hx, hy in holes:
         axes.add_patch(
-            Circle((hx, hy), style.dim("dot.radius"), facecolor=style.color("dot.fill"), edgecolor="none", zorder=5)
+            Circle(
+                (hx, hy), style.dim("dot.radius"),
+                facecolor=style.color("dot.fill"), edgecolor="none", zorder=5,
+            )
         )
 
 

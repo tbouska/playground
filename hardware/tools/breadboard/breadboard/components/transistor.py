@@ -34,7 +34,10 @@ def _transistor(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
     body_cy = base_y + 0.85
     flat_y = body_cy - radius * 0.5
     for hx, hy in holes:
-        axes.plot([hx, hx], [hy, flat_y], color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3)
+        axes.plot(
+            [hx, hx], [hy, flat_y],
+            color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3,
+        )
     axes.add_patch(
         Polygon(
             _dome_outline(cx, body_cy, radius, flat_y),
