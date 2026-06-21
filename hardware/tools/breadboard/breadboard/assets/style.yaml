@@ -111,3 +111,9 @@ crystal:
   body: "#c8ccce"
   body_edge: "#7f8589"
   body_edge_width: 1.0
+inductor:
+  coil: "#6b5430"
+  coil_width: 1.6
+  body: "#efe7d6"
+  body_edge: "#9a8f78"
+  body_edge_width: 1.0

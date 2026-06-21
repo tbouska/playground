@@ -23,9 +23,9 @@ def get_drawer(kind: str) -> Drawer | None:
 
 
 from breadboard.components import (
-    resistor, led, capacitor, diode, transistor, button, block, crystal,
+    resistor, led, capacitor, diode, transistor, button, block, crystal, inductor,
 )
 
 # kept referenced so the registration side effect is explicit; importing each
 # module runs its @register(...) decorator.
-_KIND_MODULES = (resistor, led, capacitor, diode, transistor, button, block, crystal)
+_KIND_MODULES = (resistor, led, capacitor, diode, transistor, button, block, crystal, inductor)
