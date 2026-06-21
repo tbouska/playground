@@ -12,7 +12,6 @@ from breadboard.style import Style
 
 @register("potentiometer")
 def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
-    """Draw a potentiometer: rectangular body with a round knob and a wiper tick."""
     holes = [geo.hole(leg) for leg in component.legs]
     cx = sum(hx for hx, _ in holes) / len(holes)
     cy = sum(hy for _, hy in holes) / len(holes)
@@ -21,7 +20,6 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
     body_x = cx - body_w / 2
     body_y = cy - body_h / 2
 
-    # Leads from each hole up to the body bottom edge
     lead_top_y = body_y
     for hx, hy in holes:
         axes.plot(
@@ -29,7 +27,6 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
             color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3,
         )
 
-    # Body rectangle
     axes.add_patch(
         Rectangle(
             (body_x, body_y), body_w, body_h,
@@ -40,7 +37,6 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
         )
     )
 
-    # Knob circle centred on body
     knob_radius = 0.35
     axes.add_patch(
         Circle(
@@ -52,7 +48,6 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
         )
     )
 
-    # Wiper tick: short line from knob centre toward legs[1]
     wx, wy = geo.hole(component.legs[1])
     dx, dy = wx - cx, wy - cy
     dist = math.hypot(dx, dy) or 1.0
