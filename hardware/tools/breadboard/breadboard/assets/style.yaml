@@ -107,3 +107,7 @@ block:
   pin_edge_width: 0.6
   label: "white"
   pin_label: "white"
+crystal:
+  body: "#c8ccce"
+  body_edge: "#7f8589"
+  body_edge_width: 1.0
