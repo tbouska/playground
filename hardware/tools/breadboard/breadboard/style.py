@@ -54,14 +54,17 @@ class Style:
 
 
 def _deep_merge(base: dict, override: dict, path: str = "") -> None:
-    """Merge override into base in-place; unknown keys are warned and skipped."""
+    """Merge override into base in-place; unknown or wrong-shaped keys are warned and skipped."""
     for key, value in override.items():
         dotted = f"{path}.{key}" if path else key
         if key not in base:
             _log.warning("unknown style key %r", dotted)
             continue
-        if isinstance(base[key], dict) and isinstance(value, dict):
+        base_is_dict = isinstance(base[key], dict)
+        if base_is_dict and isinstance(value, dict):
             _deep_merge(base[key], value, dotted)
+        elif base_is_dict != isinstance(value, dict):
+            _log.warning("style key %r has wrong shape; keeping default", dotted)
         else:
             base[key] = value
 
