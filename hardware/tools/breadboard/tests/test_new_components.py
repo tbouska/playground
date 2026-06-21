@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 import render_layout
-from breadboard.model import Component, Layout
+from breadboard.model import Component, Layout, Pin
 
 _CLIP_ID_RE = re.compile(r'(id="|url\(#)(p[0-9a-f]{9,})')
 
@@ -84,3 +84,17 @@ def test_potentiometer_wiper_follows_middle_leg(tmp_path: Path) -> None:
     assert svg_d2 != svg_d1, (
         "potentiometer wiper not enforced: changing legs[1] (wiper leg) produced identical SVG"
     )
+
+
+def test_relay_renders_without_error(tmp_path: Path) -> None:
+    relay = Component(
+        kind="relay",
+        ref="K1",
+        label="RELAY",
+        span=(1, 3),
+        pins=(Pin(name="VCC", hole="A1"), Pin(name="NO", hole="A3")),
+    )
+    layout = Layout(title="t", columns=10, components=(relay,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert svg, "relay render produced an empty SVG"

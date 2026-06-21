@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 import render_layout
-from breadboard.model import Component, Layout
+from breadboard.model import Component, Layout, Pin
 
 _SENTINEL = "#017fae"
 
@@ -157,6 +157,52 @@ _POTENTIOMETER_STYLE_CASES = [
     ids=[case[0] for case in _POTENTIOMETER_STYLE_CASES],
 )
 def test_potentiometer_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # An explicit default-value override must produce the same render as no override.
+    assert default_svg == same_svg, f"{label}: style default != render with no override"
+
+
+_RELAY = Component(
+    kind="relay",
+    ref="K1",
+    label="RELAY",
+    span=(1, 3),
+    pins=(Pin(name="VCC", hole="A1"), Pin(name="NO", hole="A3")),
+)
+
+# (id, component, (section, key), default_value, wild_value)
+_RELAY_STYLE_CASES = [
+    ("relay-shadow-colour", _RELAY, ("relay", "shadow"), "#16243a", _SENTINEL),
+    ("relay-body-colour", _RELAY, ("relay", "body"), "#2f5b9c", _SENTINEL),
+    ("relay-body-edge-colour", _RELAY, ("relay", "body_edge"), "#1c3a68", _SENTINEL),
+    ("relay-body-edge-width", _RELAY, ("relay", "body_edge_width"), 1.0, 9.9),
+    ("relay-top-edge-colour", _RELAY, ("relay", "top_edge"), "#4a78c0", _SENTINEL),
+    ("relay-top-edge-width", _RELAY, ("relay", "top_edge_width"), 1.6, 9.9),
+    ("relay-pin-colour", _RELAY, ("relay", "pin"), "#ffd166", _SENTINEL),
+    ("relay-pin-edge-width", _RELAY, ("relay", "pin_edge_width"), 0.6, 9.9),
+    ("relay-label-colour", _RELAY, ("relay", "label"), "white", _SENTINEL),
+    ("relay-pin-label-colour", _RELAY, ("relay", "pin_label"), "white", _SENTINEL),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _RELAY_STYLE_CASES,
+    ids=[case[0] for case in _RELAY_STYLE_CASES],
+)
+def test_relay_style_key_read_from_style(
     label: str,
     component: Component,
     key: tuple[str, str],

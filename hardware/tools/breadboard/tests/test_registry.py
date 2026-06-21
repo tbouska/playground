@@ -57,3 +57,7 @@ def test_buzzer_kind_resolves() -> None:
 
 def test_potentiometer_kind_resolves() -> None:
     assert get_drawer("potentiometer") is not None
+
+
+def test_relay_kind_resolves() -> None:
+    assert get_drawer("relay") is not None
