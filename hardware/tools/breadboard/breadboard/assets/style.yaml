@@ -131,3 +131,14 @@ potentiometer:
   knob_edge: "#7f8589"
   knob_edge_width: 1.0
   wiper: "#222222"
+relay:
+  shadow: "#16243a"
+  body: "#2f5b9c"
+  body_edge: "#1c3a68"
+  body_edge_width: 1.0
+  top_edge: "#4a78c0"
+  top_edge_width: 1.6
+  pin: "#ffd166"
+  pin_edge_width: 0.6
+  label: "white"
+  pin_label: "white"
