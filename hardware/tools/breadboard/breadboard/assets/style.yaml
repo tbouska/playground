@@ -123,3 +123,11 @@ buzzer:
   body_edge_width: 1.0
   hole: "#6a6a6a"
   plus: "#d8d8d8"
+potentiometer:
+  body: "#3a3f44"
+  body_edge: "#1f2326"
+  body_edge_width: 1.0
+  knob: "#c9ccce"
+  knob_edge: "#7f8589"
+  knob_edge_width: 1.0
+  wiper: "#222222"
