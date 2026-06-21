@@ -27,17 +27,16 @@ def _coil_polyline(
     n_loops: int,
     steps_per_half: int = 16,
 ) -> tuple[list[float], list[float]]:
-    """Sample a coil of n_loops full loops as a polyline along the e1→e2 axis."""
     n_half = n_loops * 2
     total_steps = n_half * steps_per_half
     (x1, y1), (x2, y2) = e1, e2
     xs: list[float] = []
     ys: list[float] = []
     for i in range(total_steps + 1):
-        t = i / total_steps  # 0 → 1 along the axis
+        t = i / total_steps
         ax = x1 + t * (x2 - x1)
         ay = y1 + t * (y2 - y1)
-        half_idx = i / steps_per_half  # which half-loop (fractional)
+        half_idx = i / steps_per_half
         side = 1 if int(half_idx) % 2 == 0 else -1
         bump = side * half_width * math.sin(math.pi * (i % steps_per_half) / steps_per_half)
         xs.append(ax + nx * bump)
