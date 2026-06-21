@@ -4,6 +4,7 @@ Verifies that rendering a layout containing each component completes
 without raising and produces a non-empty SVG file.
 """
 
+import logging
 import re
 from pathlib import Path
 
@@ -98,3 +99,78 @@ def test_relay_renders_without_error(tmp_path: Path) -> None:
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
     assert svg, "relay render produced an empty SVG"
+
+
+def test_seven_segment_renders_without_error(tmp_path: Path) -> None:
+    seg = Component(
+        kind="7segment",
+        ref="DS1",
+        common="cathode",
+        span=(1, 4),
+        pins=(Pin(name="a", hole="A1"), Pin(name="b", hole="A4")),
+    )
+    layout = Layout(title="t", columns=10, components=(seg,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert svg, "7segment render produced an empty SVG"
+
+
+def test_seven_segment_empty_pins_warns_and_does_not_crash(tmp_path: Path, caplog) -> None:
+    seg = Component(
+        kind="7segment",
+        ref="DS1",
+        common="cathode",
+        span=(1, 4),
+        pins=(),
+    )
+    layout = Layout(title="t", columns=10, components=(seg,), style=None)
+    out_stem = tmp_path / "no_pins"
+
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        render_layout.render(layout, out_stem)
+
+    svg_path = out_stem.with_suffix(".svg")
+    assert svg_path.exists(), f"render() did not write {svg_path}"
+    assert svg_path.stat().st_size > 0
+
+    pin_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno >= logging.WARNING and "pin" in r.getMessage().lower()
+    ]
+    assert pin_warnings, (
+        "expected at least one WARNING referencing pins when 7segment has no pins; got none"
+    )
+    # The warning must come from the drawer, not the generic dispatch loop.
+    assert not any("unknown component kind" in w for w in pin_warnings), (
+        "7segment IS a registered kind; the pin warning must not be the generic "
+        "'unknown component kind' message from the dispatch loop"
+    )
+
+
+def test_seven_segment_empty_pins_and_empty_span_skips_without_crash(tmp_path: Path, caplog) -> None:
+    seg = Component(
+        kind="7segment",
+        ref="DS1",
+        common="cathode",
+        span=(0, 0),
+        pins=(),
+    )
+    layout = Layout(title="t", columns=10, components=(seg,), style=None)
+    out_stem = tmp_path / "no_pins_no_span"
+
+    with caplog.at_level(logging.WARNING, logger="breadboard"):
+        render_layout.render(layout, out_stem)
+
+    svg_path = out_stem.with_suffix(".svg")
+    assert svg_path.exists(), f"render() did not write {svg_path}"
+    assert svg_path.stat().st_size > 0
+
+    pin_warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno >= logging.WARNING and "pin" in r.getMessage().lower()
+    ]
+    assert pin_warnings, (
+        "expected at least one WARNING referencing pins when 7segment has no pins and no span; got none"
+    )

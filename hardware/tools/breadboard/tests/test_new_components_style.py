@@ -218,3 +218,49 @@ def test_relay_style_key_read_from_style(
     assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
     # An explicit default-value override must produce the same render as no override.
     assert default_svg == same_svg, f"{label}: style default != render with no override"
+
+
+_SEVEN_SEGMENT = Component(
+    kind="7segment",
+    ref="DS1",
+    common="cathode",
+    span=(1, 4),
+    pins=(Pin(name="a", hole="A1"), Pin(name="b", hole="A4")),
+)
+
+# (id, component, (section, key), default_value, wild_value)
+_SEVEN_SEGMENT_STYLE_CASES = [
+    ("seven-segment-body-colour", _SEVEN_SEGMENT, ("seven_segment", "body"), "#1c1c1c", _SENTINEL),
+    ("seven-segment-body-edge-colour", _SEVEN_SEGMENT, ("seven_segment", "body_edge"), "#000000", _SENTINEL),
+    ("seven-segment-body-edge-width", _SEVEN_SEGMENT, ("seven_segment", "body_edge_width"), 1.0, 9.9),
+    ("seven-segment-segment-colour", _SEVEN_SEGMENT, ("seven_segment", "segment"), "#3a3a3a", _SENTINEL),
+    ("seven-segment-segment-edge-colour", _SEVEN_SEGMENT, ("seven_segment", "segment_edge"), "#555555", _SENTINEL),
+    ("seven-segment-segment-edge-width", _SEVEN_SEGMENT, ("seven_segment", "segment_edge_width"), 0.8, 9.9),
+    ("seven-segment-dp-colour", _SEVEN_SEGMENT, ("seven_segment", "dp"), "#3a3a3a", _SENTINEL),
+    ("seven-segment-pin-colour", _SEVEN_SEGMENT, ("seven_segment", "pin"), "#cfcfcf", _SENTINEL),
+    ("seven-segment-pin-edge-colour", _SEVEN_SEGMENT, ("seven_segment", "pin_edge"), "#555555", _SENTINEL),
+    ("seven-segment-pin-edge-width", _SEVEN_SEGMENT, ("seven_segment", "pin_edge_width"), 0.6, 9.9),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _SEVEN_SEGMENT_STYLE_CASES,
+    ids=[case[0] for case in _SEVEN_SEGMENT_STYLE_CASES],
+)
+def test_seven_segment_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # An explicit default-value override must produce the same render as no override.
+    assert default_svg == same_svg, f"{label}: style default != render with no override"
