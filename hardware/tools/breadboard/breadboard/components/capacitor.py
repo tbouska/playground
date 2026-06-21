@@ -29,7 +29,9 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style
         axes.add_patch(
             Polygon(
                 _body_quad(e1, e2, nx, ny, width),
-                closed=True, facecolor="#2c3e6b", edgecolor="#1c2747",
+                closed=True,
+                facecolor=style.color("capacitor.polar_body"),
+                edgecolor=style.color("capacitor.polar_body_edge"),
                 linewidth=1.0, zorder=4,
             )
         )
@@ -42,7 +44,8 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style
                     (sx + ux * 0.05, sy + uy * 0.05),
                     nx, ny, width,
                 ),
-                closed=True, facecolor="#dfe6f2", edgecolor="none", zorder=4.5,
+                closed=True, facecolor=style.color("capacitor.polar_stripe"),
+                edgecolor="none", zorder=4.5,
             )
         )
     else:
@@ -51,7 +54,9 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style
         axes.add_patch(
             Circle(
                 ((e1[0] + e2[0]) / 2, (e1[1] + e2[1]) / 2),
-                0.34, facecolor="#d9a441", edgecolor="#9c7320",
+                0.34,
+                facecolor=style.color("capacitor.ceramic_body"),
+                edgecolor=style.color("capacitor.ceramic_body_edge"),
                 linewidth=1.0, zorder=4,
             )
         )

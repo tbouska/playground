@@ -20,13 +20,17 @@ def _button(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -
     axes.add_patch(
         Rectangle(
             (x0, y0), x1 - x0, y1 - y0,
-            facecolor="#3a3f44", edgecolor="#1f2326", linewidth=1.0, zorder=4,
+            facecolor=style.color("button.housing"),
+            edgecolor=style.color("button.housing_edge"),
+            linewidth=1.0, zorder=4,
         )
     )
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     axes.add_patch(
         Circle((cx, cy), min(x1 - x0, y1 - y0) * 0.28,
-               facecolor="#a8302f", edgecolor="#5e1817", linewidth=1.0, zorder=5)
+               facecolor=style.color("button.plunger"),
+               edgecolor=style.color("button.plunger_edge"),
+               linewidth=1.0, zorder=5)
     )
     _leg_dots(axes, style, *holes)
     axes.text(

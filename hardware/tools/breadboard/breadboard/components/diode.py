@@ -25,7 +25,9 @@ def _diode(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
     axes.add_patch(
         Polygon(
             _body_quad(e1, e2, nx, ny, width),
-            closed=True, facecolor="#2b2b2b", edgecolor="#111111",
+            closed=True,
+            facecolor=style.color("diode.body"),
+            edgecolor=style.color("diode.body_edge"),
             linewidth=1.0, zorder=4,
         )
     )
@@ -37,7 +39,8 @@ def _diode(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
                 (bx + ux * 0.04, by + uy * 0.04),
                 nx, ny, width,
             ),
-            closed=True, facecolor="#d8d8d8", edgecolor="none", zorder=4.5,
+            closed=True, facecolor=style.color("diode.band"),
+            edgecolor="none", zorder=4.5,
         )
     )
     _leg_dots(axes, style, p1, p2)

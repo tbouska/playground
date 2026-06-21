@@ -10,7 +10,9 @@ from breadboard.model import Component
 from breadboard.style import Style
 
 
-def _led_lens(axes: plt.Axes, cx: float, cy: float, radius: float, fill: str) -> None:
+def _led_lens(
+    axes: plt.Axes, cx: float, cy: float, radius: float, fill: str, style: Style
+) -> None:
     """Draw a round LED lens with a flat cathode edge and a highlight."""
     flat_x = cx + radius * 0.72
     steps = 48
@@ -26,7 +28,7 @@ def _led_lens(axes: plt.Axes, cx: float, cy: float, radius: float, fill: str) ->
             outline,
             closed=True,
             facecolor=fill,
-            edgecolor="#8d6a62",
+            edgecolor=style.color("led.lens_edge"),
             linewidth=1.2,
             alpha=0.95,
             zorder=4,
@@ -52,7 +54,7 @@ def _led(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> N
             (style.channel_colors.get(name, style.color("led.fallback")), geo.hole(hole))
             for name, hole in component.named_legs.items()
         ]
-        lens_fill = "#f6d9d2"
+        lens_fill = style.color("led.rgb_lens")
         caption = f"{component.ref} RGB ({'CC' if component.common == 'cathode' else 'CA'})"
     else:
         leads = [
@@ -66,9 +68,9 @@ def _led(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> N
     cy = max(hy for _, hy in holes) + 0.95
     radius = 0.5
     for color, (hx, hy) in leads:
-        axes.plot([hx, cx], [hy, cy], color=color, linewidth=1.6, zorder=3)
+        axes.plot([hx, cx], [hy, cy], color=color, linewidth=style.dim("led.lead_width"), zorder=3)
     _leg_dots(axes, style, *holes)
-    _led_lens(axes, cx, cy, radius, lens_fill)
+    _led_lens(axes, cx, cy, radius, lens_fill, style)
     axes.text(
         cx, cy + radius + 0.28, caption,
         ha="center", va="bottom", fontsize=8.0, fontweight="bold",

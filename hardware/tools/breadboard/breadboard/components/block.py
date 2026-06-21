@@ -24,7 +24,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             (bx + 0.16, by - 0.22),
             bw,
             bh,
-            facecolor="#1f262c",
+            facecolor=style.color("block.shadow"),
             edgecolor="none",
             alpha=0.4,
             zorder=6.6,
@@ -35,8 +35,8 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             (bx, by),
             bw,
             bh,
-            facecolor="#5b6770",
-            edgecolor="#39424a",
+            facecolor=style.color("block.body"),
+            edgecolor=style.color("block.body_edge"),
             linewidth=1.0,
             zorder=7,
         )
@@ -45,7 +45,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
     axes.plot(
         [bx, bx + bw],
         [by + bh, by + bh],
-        color="#7c8893",
+        color=style.color("block.top_edge"),
         linewidth=1.6,
         zorder=7.1,
     )
@@ -67,8 +67,8 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             Circle(
                 (px, py),
                 style.dim("dot.radius"),
-                facecolor="#ffd166",
-                edgecolor="#39424a",
+                facecolor=style.color("block.pin"),
+                edgecolor=style.color("block.body_edge"),
                 linewidth=0.6,
                 zorder=9,
             )

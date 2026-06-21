@@ -41,7 +41,9 @@ def _transistor(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
     axes.add_patch(
         Polygon(
             _dome_outline(cx, body_cy, radius, flat_y),
-            closed=True, facecolor="#23282d", edgecolor="#0f1316",
+            closed=True,
+            facecolor=style.color("transistor.body"),
+            edgecolor=style.color("transistor.body_edge"),
             linewidth=1.0, zorder=4,
         )
     )

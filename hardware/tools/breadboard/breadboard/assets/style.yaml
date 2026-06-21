@@ -41,6 +41,9 @@ tick_label:
   color: "#555555"
 led:
   fallback: "#888888"
+  lens_edge: "#8d6a62"
+  rgb_lens: "#f6d9d2"
+  lead_width: 1.6
 render:
   dpi: 200
 channel:
@@ -66,3 +69,27 @@ resistor:
     - "#8e44ad"
     - "#7f8c8d"
     - "#f2f2f2"
+capacitor:
+  polar_body: "#2c3e6b"
+  polar_body_edge: "#1c2747"
+  polar_stripe: "#dfe6f2"
+  ceramic_body: "#d9a441"
+  ceramic_body_edge: "#9c7320"
+diode:
+  body: "#2b2b2b"
+  body_edge: "#111111"
+  band: "#d8d8d8"
+transistor:
+  body: "#23282d"
+  body_edge: "#0f1316"
+button:
+  housing: "#3a3f44"
+  housing_edge: "#1f2326"
+  plunger: "#a8302f"
+  plunger_edge: "#5e1817"
+block:
+  shadow: "#1f262c"
+  body: "#5b6770"
+  body_edge: "#39424a"
+  top_edge: "#7c8893"
+  pin: "#ffd166"
