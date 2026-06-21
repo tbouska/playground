@@ -29,7 +29,7 @@ def _led_lens(
             closed=True,
             facecolor=fill,
             edgecolor=style.color("led.lens_edge"),
-            linewidth=1.2,
+            linewidth=style.dim("led.lens_edge_width"),
             alpha=0.95,
             zorder=4,
         )
@@ -38,7 +38,7 @@ def _led_lens(
         Circle(
             (cx - radius * 0.3, cy + radius * 0.33),
             radius * 0.26,
-            facecolor="white",
+            facecolor=style.color("led.highlight"),
             edgecolor="none",
             alpha=0.5,
             zorder=4.5,

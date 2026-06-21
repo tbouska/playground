@@ -33,6 +33,7 @@ wire:
 label:
   ref: "#1f1f1f"
   value: "#5a5a5a"
+  halo_pad: 0.18
 title:
   color: "#222222"
 column_label:
@@ -42,8 +43,10 @@ tick_label:
 led:
   fallback: "#888888"
   lens_edge: "#8d6a62"
+  lens_edge_width: 1.2
   rgb_lens: "#f6d9d2"
   lead_width: 1.6
+  highlight: "white"
 render:
   dpi: 200
 channel:
@@ -72,24 +75,35 @@ resistor:
 capacitor:
   polar_body: "#2c3e6b"
   polar_body_edge: "#1c2747"
+  polar_body_edge_width: 1.0
   polar_stripe: "#dfe6f2"
   ceramic_body: "#d9a441"
   ceramic_body_edge: "#9c7320"
+  ceramic_body_edge_width: 1.0
 diode:
   body: "#2b2b2b"
   body_edge: "#111111"
+  body_edge_width: 1.0
   band: "#d8d8d8"
 transistor:
   body: "#23282d"
   body_edge: "#0f1316"
+  body_edge_width: 1.0
 button:
   housing: "#3a3f44"
   housing_edge: "#1f2326"
+  housing_edge_width: 1.0
   plunger: "#a8302f"
   plunger_edge: "#5e1817"
+  plunger_edge_width: 1.0
 block:
   shadow: "#1f262c"
   body: "#5b6770"
   body_edge: "#39424a"
+  body_edge_width: 1.0
   top_edge: "#7c8893"
+  top_edge_width: 1.6
   pin: "#ffd166"
+  pin_edge_width: 0.6
+  label: "white"
+  pin_label: "white"

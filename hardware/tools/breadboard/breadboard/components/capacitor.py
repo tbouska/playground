@@ -32,7 +32,7 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style
                 closed=True,
                 facecolor=style.color("capacitor.polar_body"),
                 edgecolor=style.color("capacitor.polar_body_edge"),
-                linewidth=1.0, zorder=4,
+                linewidth=style.dim("capacitor.polar_body_edge_width"), zorder=4,
             )
         )
         # Light stripe marks the negative (second) leg of an electrolytic.
@@ -57,7 +57,7 @@ def _capacitor(axes: plt.Axes, geo: Geometry, component: Component, style: Style
                 0.34,
                 facecolor=style.color("capacitor.ceramic_body"),
                 edgecolor=style.color("capacitor.ceramic_body_edge"),
-                linewidth=1.0, zorder=4,
+                linewidth=style.dim("capacitor.ceramic_body_edge_width"), zorder=4,
             )
         )
     _leg_dots(axes, style, p1, p2)

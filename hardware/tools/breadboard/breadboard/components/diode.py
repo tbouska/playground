@@ -28,7 +28,7 @@ def _diode(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             closed=True,
             facecolor=style.color("diode.body"),
             edgecolor=style.color("diode.body_edge"),
-            linewidth=1.0, zorder=4,
+            linewidth=style.dim("diode.body_edge_width"), zorder=4,
         )
     )
     bx, by = e2[0] - ux * 0.14, e2[1] - uy * 0.14

@@ -37,7 +37,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             bh,
             facecolor=style.color("block.body"),
             edgecolor=style.color("block.body_edge"),
-            linewidth=1.0,
+            linewidth=style.dim("block.body_edge_width"),
             zorder=7,
         )
     )
@@ -46,7 +46,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
         [bx, bx + bw],
         [by + bh, by + bh],
         color=style.color("block.top_edge"),
-        linewidth=1.6,
+        linewidth=style.dim("block.top_edge_width"),
         zorder=7.1,
     )
     axes.text(
@@ -56,7 +56,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
         ha="center",
         va="center",
         fontsize=8.5,
-        color="white",
+        color=style.color("block.label"),
         fontweight="bold",
         zorder=8,
     )
@@ -69,7 +69,7 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
                 style.dim("dot.radius"),
                 facecolor=style.color("block.pin"),
                 edgecolor=style.color("block.body_edge"),
-                linewidth=0.6,
+                linewidth=style.dim("block.pin_edge_width"),
                 zorder=9,
             )
         )
@@ -85,6 +85,6 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style) ->
             rotation=90,
             fontsize=6.5,
             fontweight="bold",
-            color="white",
+            color=style.color("block.pin_label"),
             zorder=9,
         )

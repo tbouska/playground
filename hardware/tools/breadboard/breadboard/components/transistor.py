@@ -44,7 +44,7 @@ def _transistor(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
             closed=True,
             facecolor=style.color("transistor.body"),
             edgecolor=style.color("transistor.body_edge"),
-            linewidth=1.0, zorder=4,
+            linewidth=style.dim("transistor.body_edge_width"), zorder=4,
         )
     )
     _leg_dots(axes, style, *holes)

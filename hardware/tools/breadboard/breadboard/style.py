@@ -46,7 +46,7 @@ class Style:
     def label_bbox(self) -> dict[str, Any]:
         """Label halo: board-coloured rounded box, so labels sit on the board."""
         return {
-            "boxstyle": "round,pad=0.18",
+            "boxstyle": f"round,pad={self.dim('label.halo_pad')}",
             "facecolor": self.color("board.fill"),
             "edgecolor": "none",
             "alpha": 0.82,

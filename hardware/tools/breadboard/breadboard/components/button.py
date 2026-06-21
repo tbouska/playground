@@ -22,7 +22,7 @@ def _button(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -
             (x0, y0), x1 - x0, y1 - y0,
             facecolor=style.color("button.housing"),
             edgecolor=style.color("button.housing_edge"),
-            linewidth=1.0, zorder=4,
+            linewidth=style.dim("button.housing_edge_width"), zorder=4,
         )
     )
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
@@ -30,7 +30,7 @@ def _button(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -
         Circle((cx, cy), min(x1 - x0, y1 - y0) * 0.28,
                facecolor=style.color("button.plunger"),
                edgecolor=style.color("button.plunger_edge"),
-               linewidth=1.0, zorder=5)
+               linewidth=style.dim("button.plunger_edge_width"), zorder=5)
     )
     _leg_dots(axes, style, *holes)
     axes.text(
