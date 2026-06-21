@@ -1,13 +1,21 @@
-"""Smoke render tests for new components (crystal).
+"""Smoke render tests for new components (crystal, inductor, buzzer).
 
-Verifies that rendering a layout containing a crystal component completes
+Verifies that rendering a layout containing each component completes
 without raising and produces a non-empty SVG file.
 """
 
+import re
 from pathlib import Path
 
 import render_layout
 from breadboard.model import Component, Layout
+
+_CLIP_ID_RE = re.compile(r'(id="|url\(#)(p[0-9a-f]{9,})')
+
+
+def _scrub(svg_text: str) -> str:
+    text = re.sub(r"[ \t]*<dc:date>.*?</dc:date>\n?", "", svg_text)
+    return _CLIP_ID_RE.sub(lambda m: m.group(1) + "CLIP_ID_PLACEHOLDER", text)
 
 
 def test_crystal_renders_without_error(tmp_path: Path) -> None:
@@ -24,3 +32,29 @@ def test_inductor_renders_without_error(tmp_path: Path) -> None:
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
     assert svg, "inductor render produced an empty SVG"
+
+
+def test_buzzer_renders_without_error(tmp_path: Path) -> None:
+    buzzer = Component(kind="buzzer", ref="BZ1", legs=("A1", "A3"))
+    layout = Layout(title="t", columns=10, components=(buzzer,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert svg, "buzzer render produced an empty SVG"
+
+
+def test_buzzer_polarity_follows_leg_order(tmp_path: Path) -> None:
+    """The + mark is placed on legs[0] side; reversing leg order must move it."""
+    buzzer_fwd = Component(kind="buzzer", ref="BZ1", legs=("A1", "A3"))
+    buzzer_rev = Component(kind="buzzer", ref="BZ1", legs=("A3", "A1"))
+
+    layout_fwd = Layout(title="t", columns=10, components=(buzzer_fwd,), style=None)
+    render_layout.render(layout_fwd, tmp_path / "fwd")
+    svg_fwd = _scrub((tmp_path / "fwd.svg").read_text(encoding="utf-8"))
+
+    layout_rev = Layout(title="t", columns=10, components=(buzzer_rev,), style=None)
+    render_layout.render(layout_rev, tmp_path / "rev")
+    svg_rev = _scrub((tmp_path / "rev.svg").read_text(encoding="utf-8"))
+
+    assert svg_fwd != svg_rev, (
+        "buzzer polarity not enforced: reversing legs[0]/legs[1] produced identical SVG"
+    )

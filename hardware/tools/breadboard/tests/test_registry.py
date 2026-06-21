@@ -49,3 +49,7 @@ def test_crystal_kind_resolves() -> None:
 
 def test_inductor_kind_resolves() -> None:
     assert get_drawer("inductor") is not None
+
+
+def test_buzzer_kind_resolves() -> None:
+    assert get_drawer("buzzer") is not None

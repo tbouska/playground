@@ -100,3 +100,38 @@ def test_inductor_style_key_read_from_style(
     assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
     # An explicit default-value override must produce the same render as no override.
     assert default_svg == same_svg, f"{label}: style default != render with no override"
+
+
+_BUZZER = Component(kind="buzzer", ref="BZ1", legs=("A1", "A3"))
+
+# (id, component, (section, key), default_value, wild_value)
+_BUZZER_STYLE_CASES = [
+    ("buzzer-body-colour", _BUZZER, ("buzzer", "body"), "#2b2b2b", _SENTINEL),
+    ("buzzer-body-edge-colour", _BUZZER, ("buzzer", "body_edge"), "#0f0f0f", _SENTINEL),
+    ("buzzer-body-edge-width", _BUZZER, ("buzzer", "body_edge_width"), 1.0, 9.9),
+    ("buzzer-hole-colour", _BUZZER, ("buzzer", "hole"), "#6a6a6a", _SENTINEL),
+    ("buzzer-plus-colour", _BUZZER, ("buzzer", "plus"), "#d8d8d8", _SENTINEL),
+]
+
+
+@pytest.mark.parametrize(
+    "label, component, key, default_value, wild_value",
+    _BUZZER_STYLE_CASES,
+    ids=[case[0] for case in _BUZZER_STYLE_CASES],
+)
+def test_buzzer_style_key_read_from_style(
+    label: str,
+    component: Component,
+    key: tuple[str, str],
+    default_value: object,
+    wild_value: object,
+    tmp_path: Path,
+) -> None:
+    section, name = key
+    default_svg = _scrub(_render_svg(component, tmp_path, None))
+    wild_svg = _scrub(_render_svg(component, tmp_path, {section: {name: wild_value}}))
+    same_svg = _scrub(_render_svg(component, tmp_path, {section: {name: default_value}}))
+    # A wild override must change the render -> the drawer reads it from Style.
+    assert default_svg != wild_svg, f"{label}: override ignored — value still inline?"
+    # An explicit default-value override must produce the same render as no override.
+    assert default_svg == same_svg, f"{label}: style default != render with no override"
