@@ -253,7 +253,30 @@ def test_seven_segment_default_digit_render_is_unchanged(tmp_path: Path) -> None
     assert svg_imp == svg_exp, "default digits must equal digits=1 exactly"
 
 
-def test_seven_segment_empty_pins_and_empty_span_skips_without_crash(tmp_path: Path, caplog) -> None:
+def test_seven_segment_no_pins_renders_body_not_dead_branch(tmp_path: Path, empty_board_paths: int) -> None:
+    """A 7-segment with no pins and span=(0,0) must draw body geometry, not silently return.
+
+    The dead-branch bug: the no-pins+empty-span code path logs "rendering body only"
+    then immediately returns without drawing anything — the log lies.  After the fix
+    the path renders a body, so the SVG's <path> count must exceed the bare board.
+    """
+    seg = Component(
+        kind="7segment",
+        ref="DS1",
+        common="cathode",
+        span=(0, 0),
+        pins=(),
+    )
+    layout = Layout(title="t", columns=10, components=(seg,), style=None)
+    render_layout.render(layout, tmp_path / "o")
+    svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
+    assert _path_count(svg) > empty_board_paths, (
+        "7segment with no pins and span=(0,0) drew no geometry beyond the bare board "
+        "(dead-branch early-return still active?)"
+    )
+
+
+def test_seven_segment_empty_pins_and_empty_span_renders_degenerate_body_without_crash(tmp_path: Path, caplog) -> None:
     seg = Component(
         kind="7segment",
         ref="DS1",
