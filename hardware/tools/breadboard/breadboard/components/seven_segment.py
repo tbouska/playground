@@ -45,7 +45,7 @@ _DIGIT_SCALE = 0.55
 
 
 def _seven_segment_extent(
-    axes: plt.Axes, geo: Geometry, component: Component
+    geo: Geometry, component: Component
 ) -> tuple[float, float, float, float]:
     # Returns (x_left, x_right, y_top, y_bottom).
     if component.pins:
@@ -126,7 +126,7 @@ def _seven_segment_pins(axes: plt.Axes, geo: Geometry, component: Component, sty
 
 @register("7segment")
 def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
-    x_left, x_right, y_top, y_bottom = _seven_segment_extent(axes, geo, component)
+    x_left, x_right, y_top, y_bottom = _seven_segment_extent(geo, component)
     cx = (x_left + x_right) / 2.0
     cy = (y_top + y_bottom) / 2.0
     s = _DIGIT_SCALE
