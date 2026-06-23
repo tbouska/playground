@@ -436,3 +436,57 @@ def test_potentiometer_leads_body_side_endpoint_lies_within_body() -> None:
             f"x=[{body_x0:.4f}, {body_x1:.4f}] y=[{body_y0:.4f}, {body_y1:.4f}]"
         )
     plt.close(fig)
+
+
+def test_relay_with_ref_only_renders_ref_text() -> None:
+    """A relay built with ref and no label must draw the ref text, not an empty string.
+
+    Current buggy code renders component.label (which is ""), so no "K1" appears.
+    """
+    fig, axes = plt.subplots()
+    geo = Geometry(10)
+    style = load_style()
+    comp = Component(kind="relay", ref="K1", legs=("A1", "A3"))
+    get_drawer("relay")(axes, geo, comp, style)
+
+    texts = [t.get_text() for t in axes.texts]
+    assert any("K1" in t for t in texts), (
+        f"relay with ref='K1' and no label must render 'K1' as text; "
+        f"got text artists: {texts}"
+    )
+    plt.close(fig)
+
+
+def test_relay_bare_leg_list_body_spans_legs() -> None:
+    """A relay with only legs (no span, no pins) must draw a body that spans those legs.
+
+    Current buggy code falls back to span=(0,0) -> a degenerate body near column 0
+    that does NOT cover the leg holes. The body rectangle's x-extent must contain
+    every leg's hole x-coordinate, and the width must be clearly non-degenerate.
+    """
+    fig, axes = plt.subplots()
+    geo = Geometry(10)
+    style = load_style()
+    comp = Component(kind="relay", ref="K1", legs=("A1", "A3"))
+    get_drawer("relay")(axes, geo, comp, style)
+
+    rects = [p for p in axes.patches if hasattr(p, "get_width") and not hasattr(p, "radius")]
+    assert rects, "relay drawer did not draw a body Rectangle"
+    body = max(rects, key=lambda r: r.get_width() * r.get_height())
+
+    body_x0 = body.get_x()
+    body_x1 = body_x0 + body.get_width()
+
+    assert body.get_width() > 1.0, (
+        f"relay body width {body.get_width():.4f} is degenerate; "
+        f"expected a real span covering legs A1..A3"
+    )
+
+    tol = 1e-6
+    for leg in comp.legs:
+        leg_x = geo.hole(leg)[0]
+        assert (body_x0 - tol) <= leg_x <= (body_x1 + tol), (
+            f"leg {leg!r} hole x={leg_x:.4f} lies outside relay body "
+            f"x=[{body_x0:.4f}, {body_x1:.4f}]"
+        )
+    plt.close(fig)
