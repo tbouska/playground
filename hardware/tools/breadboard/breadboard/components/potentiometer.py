@@ -10,18 +10,7 @@ from breadboard.model import Component
 from breadboard.style import Style
 
 
-@register("potentiometer")
-def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
-    holes = [geo.hole(leg) for leg in component.legs]
-    cx = sum(hx for hx, _ in holes) / len(holes)
-    cy = sum(hy for _, hy in holes) / len(holes)
-
-    xs = [hx for hx, _ in holes]
-    spread = max(xs) - min(xs)
-    body_w, body_h = max(1.2, spread + 0.2), 1.2
-    body_x = cx - body_w / 2
-    body_y = cy - body_h / 2
-
+def _pot_leads(axes, holes, body_y, style) -> None:
     lead_top_y = body_y
     for hx, hy in holes:
         axes.plot(
@@ -29,6 +18,10 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
             color=style.color("lead.color"), linewidth=style.dim("lead.width"), zorder=3,
         )
 
+
+def _pot_body(axes, cx, cy, body_w, body_h, style) -> None:
+    body_x = cx - body_w / 2
+    body_y = cy - body_h / 2
     axes.add_patch(
         Rectangle(
             (body_x, body_y), body_w, body_h,
@@ -38,7 +31,6 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
             zorder=4,
         )
     )
-
     knob_radius = 0.35
     axes.add_patch(
         Circle(
@@ -50,6 +42,8 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
         )
     )
 
+
+def _pot_wiper(axes, geo, component, cx, cy, knob_radius, style) -> None:
     wx, wy = geo.hole(component.legs[1])
     dx, dy = wx - cx, wy - cy
     dist = math.hypot(dx, dy)
@@ -63,6 +57,23 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
         linewidth=style.dim("lead.width"),
         zorder=6,
     )
+
+
+@register("potentiometer")
+def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
+    holes = [geo.hole(leg) for leg in component.legs]
+    cx = sum(hx for hx, _ in holes) / len(holes)
+    cy = sum(hy for _, hy in holes) / len(holes)
+
+    xs = [hx for hx, _ in holes]
+    spread = max(xs) - min(xs)
+    body_w, body_h = max(1.2, spread + 0.2), 1.2
+    body_y = cy - body_h / 2
+
+    _pot_leads(axes, holes, body_y, style)
+    _pot_body(axes, cx, cy, body_w, body_h, style)
+    knob_radius = 0.35
+    _pot_wiper(axes, geo, component, cx, cy, knob_radius, style)
 
     _leg_dots(axes, style, *holes)
 
