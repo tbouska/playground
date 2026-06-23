@@ -7,9 +7,8 @@ from breadboard.model import Component
 from breadboard.style import Style
 
 
-@register("module", "power")
-def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, section: str = "block", label: str | None = None) -> None:
-    """Draw a module or power block spanning its pin rows across the banks."""
+def _span_bounds(geo: Geometry, component: Component) -> tuple[float, float, float, float]:
+    """Returns (first, last, y_top, y_bottom); the legs-fallback when span == (0, 0)."""
     first, last = component.span
     if (first, last) == (0, 0) and component.legs:
         xs = [geo.hole(leg)[0] for leg in component.legs]
@@ -20,8 +19,11 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, se
     else:
         rows = [geo.line_y[r] for r in "ABCDEFGHIJ"]
         y_top, y_bottom = max(rows), min(rows)
-    bx, by = first - 0.4, y_bottom - 0.3
-    bw, bh = (last - first) + 0.8, (y_top - y_bottom) + 0.6
+    return first, last, y_top, y_bottom
+
+
+def _block_body(axes: plt.Axes, bx: float, by: float, bw: float, bh: float, section: str, style: Style) -> None:
+    """Draw the shadow rect, body rect, and lit top-edge plot."""
     axes.add_patch(
         Rectangle(
             (bx + 0.16, by - 0.22),
@@ -52,19 +54,10 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, se
         linewidth=style.dim(f"{section}.top_edge_width"),
         zorder=7.1,
     )
-    text = component.label if label is None else label
-    axes.text(
-        (first + last) / 2,
-        (y_top + y_bottom) / 2,
-        text,
-        ha="center",
-        va="center",
-        fontsize=8.5,
-        color=style.color(f"{section}.label"),
-        fontweight="bold",
-        zorder=8,
-    )
-    center_y = (y_top + y_bottom) / 2.0
+
+
+def _block_pins(axes: plt.Axes, geo: Geometry, component: Component, section: str, style: Style, center_y: float) -> None:
+    """Draw the pin dots and vertical pin-name text loop."""
     for pin in component.pins:
         px, py = geo.hole(pin.hole)
         axes.add_patch(
@@ -92,3 +85,26 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, se
             color=style.color(f"{section}.pin_label"),
             zorder=9,
         )
+
+
+@register("module", "power")
+def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, section: str = "block", label: str | None = None) -> None:
+    """Draw a module or power block spanning its pin rows across the banks."""
+    first, last, y_top, y_bottom = _span_bounds(geo, component)
+    bx, by = first - 0.4, y_bottom - 0.3
+    bw, bh = (last - first) + 0.8, (y_top - y_bottom) + 0.6
+    _block_body(axes, bx, by, bw, bh, section, style)
+    text = component.label if label is None else label
+    axes.text(
+        (first + last) / 2,
+        (y_top + y_bottom) / 2,
+        text,
+        ha="center",
+        va="center",
+        fontsize=8.5,
+        color=style.color(f"{section}.label"),
+        fontweight="bold",
+        zorder=8,
+    )
+    center_y = (y_top + y_bottom) / 2.0
+    _block_pins(axes, geo, component, section, style, center_y)
