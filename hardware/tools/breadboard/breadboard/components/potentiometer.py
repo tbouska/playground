@@ -10,7 +10,12 @@ from breadboard.model import Component
 from breadboard.style import Style
 
 
-def _pot_leads(axes, holes, body_y, style) -> None:
+def _pot_leads(
+    axes: plt.Axes,
+    holes: list[tuple[float, float]],
+    body_y: float,
+    style: Style,
+) -> None:
     lead_top_y = body_y
     for hx, hy in holes:
         axes.plot(
@@ -19,9 +24,17 @@ def _pot_leads(axes, holes, body_y, style) -> None:
         )
 
 
-def _pot_body(axes, cx, cy, body_w, body_h, style) -> None:
+def _pot_body(
+    axes: plt.Axes,
+    cx: float,
+    cy: float,
+    body_w: float,
+    body_h: float,
+    body_y: float,
+    knob_radius: float,
+    style: Style,
+) -> None:
     body_x = cx - body_w / 2
-    body_y = cy - body_h / 2
     axes.add_patch(
         Rectangle(
             (body_x, body_y), body_w, body_h,
@@ -31,7 +44,6 @@ def _pot_body(axes, cx, cy, body_w, body_h, style) -> None:
             zorder=4,
         )
     )
-    knob_radius = 0.35
     axes.add_patch(
         Circle(
             (cx, cy), knob_radius,
@@ -43,7 +55,15 @@ def _pot_body(axes, cx, cy, body_w, body_h, style) -> None:
     )
 
 
-def _pot_wiper(axes, geo, component, cx, cy, knob_radius, style) -> None:
+def _pot_wiper(
+    axes: plt.Axes,
+    geo: Geometry,
+    component: Component,
+    cx: float,
+    cy: float,
+    knob_radius: float,
+    style: Style,
+) -> None:
     wx, wy = geo.hole(component.legs[1])
     dx, dy = wx - cx, wy - cy
     dist = math.hypot(dx, dy)
@@ -70,9 +90,9 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
     body_w, body_h = max(1.2, spread + 0.2), 1.2
     body_y = cy - body_h / 2
 
-    _pot_leads(axes, holes, body_y, style)
-    _pot_body(axes, cx, cy, body_w, body_h, style)
     knob_radius = 0.35
+    _pot_leads(axes, holes, body_y, style)
+    _pot_body(axes, cx, cy, body_w, body_h, body_y, knob_radius, style)
     _pot_wiper(axes, geo, component, cx, cy, knob_radius, style)
 
     _leg_dots(axes, style, *holes)
