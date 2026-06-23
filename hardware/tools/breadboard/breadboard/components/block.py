@@ -8,9 +8,12 @@ from breadboard.style import Style
 
 
 @register("module", "power")
-def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, section: str = "block") -> None:
+def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, section: str = "block", label: str | None = None) -> None:
     """Draw a module or power block spanning its pin rows across the banks."""
     first, last = component.span
+    if (first, last) == (0, 0) and component.legs:
+        xs = [geo.hole(leg)[0] for leg in component.legs]
+        first, last = min(xs), max(xs)
     if component.pins:
         pin_ys = [geo.hole(pin.hole)[1] for pin in component.pins]
         y_top, y_bottom = max(pin_ys), min(pin_ys)
@@ -49,10 +52,11 @@ def _block(axes: plt.Axes, geo: Geometry, component: Component, style: Style, se
         linewidth=style.dim(f"{section}.top_edge_width"),
         zorder=7.1,
     )
+    text = component.label if label is None else label
     axes.text(
         (first + last) / 2,
         (y_top + y_bottom) / 2,
-        component.label,
+        text,
         ha="center",
         va="center",
         fontsize=8.5,

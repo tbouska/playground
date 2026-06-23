@@ -9,4 +9,4 @@ from breadboard.style import Style
 
 @register("relay")
 def draw_relay(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
-    _block(axes, geo, component, style, section="relay")
+    _block(axes, geo, component, style, section="relay", label=component.label or component.ref)
