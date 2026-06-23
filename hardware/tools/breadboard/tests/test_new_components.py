@@ -1,12 +1,17 @@
-"""Smoke render tests for new components (crystal, inductor, buzzer).
+"""Render tests for the new components.
 
-Verifies that rendering a layout containing each component completes
-without raising and produces a non-empty SVG file.
+Each component test renders a single-component layout and asserts the drawer
+added geometry beyond the bare board. A no-op drawer (one that registers but
+draws nothing) would still leave the board SVG non-empty, so a plain "is the
+SVG non-empty" check could never catch it; comparing the drawn <path> count
+against an empty board can.
 """
 
 import logging
 import re
 from pathlib import Path
+
+import pytest
 
 import render_layout
 from breadboard.model import Component, Layout, Pin
@@ -20,28 +25,48 @@ def _scrub(svg_text: str) -> str:
     return _CLIP_ID_RE.sub(lambda m: m.group(1) + "CLIP_ID_PLACEHOLDER", text)
 
 
-def test_crystal_renders_without_error(tmp_path: Path) -> None:
+def _path_count(svg_text: str) -> int:
+    """Number of drawn <path> elements; a proxy for rendered geometry."""
+    return svg_text.count("<path")
+
+
+@pytest.fixture(scope="module")
+def empty_board_paths(tmp_path_factory: pytest.TempPathFactory) -> int:
+    """<path> count for a board with no components: the no-op-drawer floor."""
+    layout = Layout(title="t", columns=10, components=(), style=None)
+    out = tmp_path_factory.mktemp("empty") / "o"
+    render_layout.render(layout, out)
+    return _path_count(out.with_suffix(".svg").read_text(encoding="utf-8"))
+
+
+def test_crystal_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     crystal = Component(kind="crystal", ref="X1", value="16MHz", legs=("A1", "A3"))
     layout = Layout(title="t", columns=10, components=(crystal,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "crystal render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "crystal drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
-def test_inductor_renders_without_error(tmp_path: Path) -> None:
+def test_inductor_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     inductor = Component(kind="inductor", ref="L1", value="10uH", legs=("A1", "A3"))
     layout = Layout(title="t", columns=10, components=(inductor,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "inductor render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "inductor drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
-def test_buzzer_renders_without_error(tmp_path: Path) -> None:
+def test_buzzer_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     buzzer = Component(kind="buzzer", ref="BZ1", legs=("A1", "A3"))
     layout = Layout(title="t", columns=10, components=(buzzer,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "buzzer render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "buzzer drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
 def test_buzzer_polarity_follows_leg_order(tmp_path: Path) -> None:
@@ -62,12 +87,14 @@ def test_buzzer_polarity_follows_leg_order(tmp_path: Path) -> None:
     )
 
 
-def test_potentiometer_renders_without_error(tmp_path: Path) -> None:
+def test_potentiometer_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     pot = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
     layout = Layout(title="t", columns=10, components=(pot,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "potentiometer render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "potentiometer drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
 def test_potentiometer_wiper_follows_middle_leg(tmp_path: Path) -> None:
@@ -88,7 +115,7 @@ def test_potentiometer_wiper_follows_middle_leg(tmp_path: Path) -> None:
     )
 
 
-def test_relay_renders_without_error(tmp_path: Path) -> None:
+def test_relay_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     relay = Component(
         kind="relay",
         ref="K1",
@@ -99,10 +126,12 @@ def test_relay_renders_without_error(tmp_path: Path) -> None:
     layout = Layout(title="t", columns=10, components=(relay,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "relay render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "relay drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
-def test_seven_segment_renders_without_error(tmp_path: Path) -> None:
+def test_seven_segment_draws_geometry(tmp_path: Path, empty_board_paths: int) -> None:
     seg = Component(
         kind="7segment",
         ref="DS1",
@@ -113,7 +142,9 @@ def test_seven_segment_renders_without_error(tmp_path: Path) -> None:
     layout = Layout(title="t", columns=10, components=(seg,), style=None)
     render_layout.render(layout, tmp_path / "o")
     svg = (tmp_path / "o.svg").read_text(encoding="utf-8")
-    assert svg, "7segment render produced an empty SVG"
+    assert _path_count(svg) > empty_board_paths, (
+        "7segment drawer added no geometry beyond the bare board (no-op drawer?)"
+    )
 
 
 def test_seven_segment_empty_pins_warns_and_does_not_crash(tmp_path: Path, caplog) -> None:
