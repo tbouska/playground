@@ -52,10 +52,8 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
         y_top, y_bottom = max(ys), min(ys)
         x_left, x_right = min(xs), max(xs)
     else:
-        _log.warning("seven_segment %r has no pins; rendering body only", component.ref)
         first, last = component.span
-        if first == 0 and last == 0:
-            return
+        _log.warning("seven_segment %r has no pins; rendering body from span %s", component.ref, component.span)
         x_left, x_right = float(first), float(last)
         rows = [geo.line_y[r] for r in "ABCDEFGHIJ"]
         y_top, y_bottom = max(rows), min(rows)
