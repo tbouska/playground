@@ -8,14 +8,21 @@ against an empty board can.
 """
 
 import logging
+import math
 import re
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import pytest
 
 import render_layout
+from breadboard.components import get_drawer
+from breadboard.geometry import Geometry
 from breadboard.model import Component, Layout, Pin
 from breadboard.parse import _component_from_dict
+from breadboard.style import load_style
 
 _CLIP_ID_RE = re.compile(r'(id="|url\(#)(p[0-9a-f]{9,})')
 
@@ -272,3 +279,160 @@ def test_seven_segment_empty_pins_and_empty_span_skips_without_crash(tmp_path: P
     assert pin_warnings, (
         "expected at least one WARNING referencing pins when 7segment has no pins and no span; got none"
     )
+
+
+# ---------------------------------------------------------------------------
+# Geometry assertion tests (bind to drawn coordinates, not SVG existence)
+# ---------------------------------------------------------------------------
+
+
+def test_potentiometer_wiper_tick_has_nonzero_length() -> None:
+    """The wiper tick drawn at the knob centre must span a nonzero distance.
+
+    A buggy drawer that collapses both endpoints to the same point (zero-length
+    tick) would still produce a non-empty SVG but this assertion catches it.
+    Uses legs=("D1","D2","D3") which is the canonical 3-leg layout for the fix.
+    """
+    fig, axes = plt.subplots()
+    geo = Geometry(10)
+    style = load_style()
+    comp = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
+    get_drawer("potentiometer")(axes, geo, comp, style)
+
+    # Knob centre = centroid of the three leg holes.
+    leg_holes = [geo.hole(leg) for leg in comp.legs]
+    knob_cx = sum(x for x, _ in leg_holes) / len(leg_holes)
+    knob_cy = sum(y for _, y in leg_holes) / len(leg_holes)
+
+    # The drawer plots: N lead lines (one per leg, starting at each leg hole),
+    # then the wiper line (starting at knob centre).  Match each leg hole to the
+    # FIRST line that starts there (one-to-one), then the wiper is the next
+    # remaining line that starts at the knob centre.
+    remaining_holes = [geo.hole(leg) for leg in comp.legs]
+    non_lead_lines: list = []
+    for line in axes.lines:
+        xdata = line.get_xdata()
+        ydata = line.get_ydata()
+        if len(xdata) < 2:
+            continue
+        start = (xdata[0], ydata[0])
+        matched = False
+        for i, (hx, hy) in enumerate(remaining_holes):
+            if math.isclose(start[0], hx, abs_tol=1e-6) and math.isclose(start[1], hy, abs_tol=1e-6):
+                remaining_holes.pop(i)
+                matched = True
+                break
+        if not matched:
+            non_lead_lines.append(line)
+
+    wiper = None
+    for line in non_lead_lines:
+        xdata = line.get_xdata()
+        ydata = line.get_ydata()
+        if (math.isclose(xdata[0], knob_cx, abs_tol=1e-6)
+                and math.isclose(ydata[0], knob_cy, abs_tol=1e-6)):
+            wiper = line
+            break
+
+    assert wiper is not None, "potentiometer drawer did not draw a wiper Line2D starting at the knob centre"
+
+    xdata = wiper.get_xdata()
+    ydata = wiper.get_ydata()
+    dx = xdata[-1] - xdata[0]
+    dy = ydata[-1] - ydata[0]
+    length = math.hypot(dx, dy)
+    assert length > 0, (
+        f"potentiometer wiper tick has zero length (both endpoints are identical at "
+        f"({xdata[0]:.4f}, {ydata[0]:.4f})); the wiper is invisible"
+    )
+    plt.close(fig)
+
+
+def test_buzzer_plus_mark_lies_inside_can() -> None:
+    """The '+' polarity mark must lie within the body circle, not outside it.
+
+    A buggy drawer that places the mark at an unscaled coordinate (e.g. column
+    index instead of canvas position) would put it far outside the can; this
+    assertion catches that by checking distance(body_centre, plus_mark) < can_radius.
+    """
+    fig, axes = plt.subplots()
+    geo = Geometry(10)
+    style = load_style()
+    comp = Component(kind="buzzer", ref="BZ1", legs=("A1", "A3"))
+    get_drawer("buzzer")(axes, geo, comp, style)
+
+    circles = [p for p in axes.patches if hasattr(p, "radius")]
+    assert len(circles) >= 2, (
+        f"buzzer drawer must draw at least 2 circles (can body + centre hole); got {len(circles)}"
+    )
+    can = max(circles, key=lambda c: c.radius)
+    body_centre = can.center
+    can_radius = can.radius
+
+    plus_texts = [t for t in axes.texts if t.get_text() == "+"]
+    assert plus_texts, "buzzer drawer did not draw a '+' text artist for the polarity mark"
+    plus_pos = plus_texts[0].get_position()
+
+    dist = math.hypot(plus_pos[0] - body_centre[0], plus_pos[1] - body_centre[1])
+    assert dist < can_radius, (
+        f"'+' mark at {plus_pos} is outside the can body "
+        f"(distance {dist:.4f} >= can_radius {can_radius:.4f}, centre {body_centre})"
+    )
+    plt.close(fig)
+
+
+def test_potentiometer_leads_body_side_endpoint_lies_within_body() -> None:
+    """Each lead must terminate at/within the body rectangle, not float beyond it.
+
+    With a wide leg spread (legs=("D1","D2","D3")), the outer legs lie beyond a
+    fixed-width body. The fix must clamp each lead's body-side endpoint to the
+    body boundary; a buggy drawer leaves them floating outside.
+    """
+    fig, axes = plt.subplots()
+    geo = Geometry(10)
+    style = load_style()
+    comp = Component(kind="potentiometer", ref="RV1", value="10k", legs=("D1", "D2", "D3"))
+    get_drawer("potentiometer")(axes, geo, comp, style)
+
+    rects = [p for p in axes.patches if hasattr(p, "get_width") and not hasattr(p, "radius")]
+    assert rects, "potentiometer drawer did not draw a body Rectangle"
+    body = max(rects, key=lambda r: r.get_width() * r.get_height())
+    body_x0 = body.get_x()
+    body_y0 = body.get_y()
+    body_x1 = body_x0 + body.get_width()
+    body_y1 = body_y0 + body.get_height()
+
+    # Leads start at each leg hole; identify them by their first endpoint.
+    # Match each leg hole to exactly one Line2D (one-to-one) to avoid picking up
+    # the wiper, which in a symmetric layout also starts at the middle leg hole.
+    leg_holes_list = [geo.hole(leg) for leg in comp.legs]
+    remaining_holes = list(leg_holes_list)
+    leads = []
+    for line in axes.lines:
+        xdata = line.get_xdata()
+        ydata = line.get_ydata()
+        if len(xdata) < 2:
+            continue
+        start = (xdata[0], ydata[0])
+        for i, (hx, hy) in enumerate(remaining_holes):
+            if math.isclose(start[0], hx, abs_tol=1e-6) and math.isclose(start[1], hy, abs_tol=1e-6):
+                leads.append(line)
+                remaining_holes.pop(i)
+                break
+
+    assert len(leads) == len(comp.legs), (
+        f"expected {len(comp.legs)} lead Line2Ds (one per leg), found {len(leads)}"
+    )
+
+    tol = 1e-6
+    for lead in leads:
+        xdata = lead.get_xdata()
+        ydata = lead.get_ydata()
+        end_x, end_y = xdata[-1], ydata[-1]
+        within_x = (body_x0 - tol) <= end_x <= (body_x1 + tol)
+        within_y = (body_y0 - tol) <= end_y <= (body_y1 + tol)
+        assert within_x and within_y, (
+            f"lead body-side endpoint ({end_x:.4f}, {end_y:.4f}) lies outside the body rectangle "
+            f"x=[{body_x0:.4f}, {body_x1:.4f}] y=[{body_y0:.4f}, {body_y1:.4f}]"
+        )
+    plt.close(fig)
