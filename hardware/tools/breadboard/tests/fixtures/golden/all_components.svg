@@ -9755,10 +9755,10 @@ z
 " clip-path="url(#CLIP_ID_PLACEHOLDER)" style="fill: #2b2b2b; stroke: #0f0f0f; stroke-linejoin: miter"/>
    </g>
    <g id="patch_1068">
-    <path d="M 230.88888 209.209528 
-L 257.395388 209.209528 
-L 257.395388 182.703019 
-L 230.88888 182.703019 
+    <path d="M 219.844501 209.209528 
+L 268.439766 209.209528 
+L 268.439766 182.703019 
+L 219.844501 182.703019 
 z
 " clip-path="url(#CLIP_ID_PLACEHOLDER)" style="fill: #3a3f44; stroke: #1f2326; stroke-linejoin: miter"/>
    </g>
@@ -11203,7 +11203,7 @@ z
    </g>
    <g id="text_56">
     <!-- + -->
-    <g style="fill: #d8d8d8" transform="translate(230.164865 175.685876) scale(0.07 -0.07)">
+    <g style="fill: #d8d8d8" transform="translate(236.592693 175.685876) scale(0.07 -0.07)">
      <defs>
       <path id="DejaVuSans-Bold-e" d="M 3053 4013 
 L 3053 2375 
@@ -11262,7 +11262,7 @@ z
    </g>
    <g id="line2d_33">
     <path d="M 244.142134 195.956273 
-L 244.142134 195.956273 
+L 244.142134 202.141125 
 " clip-path="url(#CLIP_ID_PLACEHOLDER)" style="fill: none; stroke: #222222; stroke-width: 1.4; stroke-linecap: square"/>
    </g>
    <g id="text_58">

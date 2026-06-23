@@ -16,7 +16,9 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
     cx = sum(hx for hx, _ in holes) / len(holes)
     cy = sum(hy for _, hy in holes) / len(holes)
 
-    body_w, body_h = 1.2, 1.2
+    xs = [hx for hx, _ in holes]
+    spread = max(xs) - min(xs)
+    body_w, body_h = max(1.2, spread + 0.2), 1.2
     body_x = cx - body_w / 2
     body_y = cy - body_h / 2
 
@@ -50,7 +52,9 @@ def draw_potentiometer(axes: plt.Axes, geo: Geometry, component: Component, styl
 
     wx, wy = geo.hole(component.legs[1])
     dx, dy = wx - cx, wy - cy
-    dist = math.hypot(dx, dy) or 1.0
+    dist = math.hypot(dx, dy)
+    if dist < 1e-9:
+        dx, dy, dist = 0.0, -1.0, 1.0   # straight down when the wiper leg is the centroid
     tick_len = knob_radius * 0.8
     axes.plot(
         [cx, cx + (dx / dist) * tick_len],

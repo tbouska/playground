@@ -39,8 +39,9 @@ def draw_buzzer(axes: plt.Axes, geo: Geometry, component: Component, style: Styl
             zorder=5,
         )
     )
-    plus_x = (mx + p1[0]) / 2
-    plus_y = (my + p1[1]) / 2
+    plus_r = radius * 0.55          # 0.209: inside can (radius 0.38), outside the centre hole (radius*0.3)
+    plus_x = mx - ux * plus_r
+    plus_y = my - uy * plus_r
     axes.text(
         plus_x, plus_y, "+",
         ha="center", va="center",
