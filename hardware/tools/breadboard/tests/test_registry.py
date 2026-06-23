@@ -65,4 +65,3 @@ def test_relay_kind_resolves() -> None:
 
 def test_seven_segment_kind_resolves() -> None:
     assert get_drawer("7segment") is not None
-    assert get_drawer("seven-segment") is not None

@@ -44,7 +44,7 @@ _DP_RADIUS = _T * 0.9
 _DIGIT_SCALE = 0.55
 
 
-@register("7segment", "seven-segment")
+@register("7segment")
 def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
     if component.pins:
         pin_coords = [geo.hole(p.hole) for p in component.pins]
