@@ -1,6 +1,6 @@
-"""Style-sourcing tests for new components (crystal).
+"""Style-sourcing tests for the new components.
 
-Each crystal drawer must read its colours and scalar dimensions from the passed
+Each new drawer must read its colours and scalar dimensions from the passed
 Style, not from inline literals. Overriding a style key must change the render;
 if a drawer regresses to an inline literal, the override stops taking effect and
 the matching test fails.
