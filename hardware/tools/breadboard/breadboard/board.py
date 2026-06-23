@@ -5,8 +5,8 @@ from breadboard.geometry import Geometry
 from breadboard.style import Style
 
 
-def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
-    """Draw the board background, rails, holes, and row/column labels."""
+def _draw_board_base(axes: plt.Axes, geo: Geometry, style: Style) -> tuple[float, float, float, float]:
+    """Draw the board substrate (shadow, board, bevel, channel) and return its bbox."""
     ys = list(geo.line_y.values())
     top, bottom = max(ys), min(ys)
     board_x, board_y = 0.2, bottom - 0.8
@@ -83,6 +83,11 @@ def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
         alpha=0.7,
         zorder=0.6,
     )
+    return board_x, board_y, board_w, board_h
+
+
+def _draw_rails_and_holes(axes: plt.Axes, geo: Geometry, style: Style) -> None:
+    """Draw the power rails, socket holes, and left/right tick labels."""
     for key, y in geo.line_y.items():
         if key in ("T+", "B+"):
             axes.plot(
@@ -160,6 +165,10 @@ def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
             fontsize=8,
             color=style.color("tick_label.color"),
         )
+
+
+def _draw_column_labels(axes: plt.Axes, geo: Geometry, style: Style, top: float, bottom: float) -> None:
+    """Draw the numbered column labels above and below the board."""
     for col in range(1, geo.columns + 1):
         if col == 1 or col % 5 == 0:
             axes.text(
@@ -180,3 +189,12 @@ def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
                 fontsize=7,
                 color=style.color("column_label.color"),
             )
+
+
+def _draw_board(axes: plt.Axes, geo: Geometry, style: Style) -> None:
+    """Draw the board background, rails, holes, and row/column labels."""
+    ys = list(geo.line_y.values())
+    top, bottom = max(ys), min(ys)
+    _draw_board_base(axes, geo, style)
+    _draw_rails_and_holes(axes, geo, style)
+    _draw_column_labels(axes, geo, style, top, bottom)
