@@ -44,8 +44,10 @@ _DP_RADIUS = _T * 0.9
 _DIGIT_SCALE = 0.55
 
 
-@register("7segment")
-def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
+def _seven_segment_extent(
+    axes: plt.Axes, geo: Geometry, component: Component
+) -> tuple[float, float, float, float]:
+    # Returns (x_left, x_right, y_top, y_bottom).
     if component.pins:
         pin_coords = [geo.hole(p.hole) for p in component.pins]
         xs, ys = zip(*pin_coords)
@@ -57,20 +59,13 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
         x_left, x_right = float(first), float(last)
         rows = [geo.line_y[r] for r in "ABCDEFGHIJ"]
         y_top, y_bottom = max(rows), min(rows)
+    return x_left, x_right, y_top, y_bottom
 
-    cx = (x_left + x_right) / 2.0
-    cy = (y_top + y_bottom) / 2.0
-    s = _DIGIT_SCALE
 
-    bx = x_left - 0.4
-    by = y_bottom - 0.3
-    bw = (x_right - x_left) + 0.8
-    bh = (y_top - y_bottom) + 0.6
-
-    # One figure-8 per digit position. A single digit sits at the body centre
-    # (output unchanged); multiple digits spread evenly across the body, which
-    # widens symmetrically about cx if the digit row would overflow its interior.
-    n_digits = max(1, component.digits)
+def _digit_centers(
+    cx: float, bx: float, bw: float, n_digits: int, s: float
+) -> tuple[list[float], float, float]:
+    # Returns (digit_centers, bx, bw).
     if n_digits == 1:
         digit_centers = [cx]
     else:
@@ -84,6 +79,64 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
             bw += extra
         first_cx = cx - row_w / 2.0
         digit_centers = [first_cx + i * pitch for i in range(n_digits)]
+    return digit_centers, bx, bw
+
+
+def _draw_digit(axes: plt.Axes, dcx: float, cy: float, s: float, style: Style) -> None:
+    # Draws one digit (segments + decimal point) at (dcx, cy).
+    for seg_verts in _SEGMENTS:
+        axes.add_patch(
+            Polygon(
+                [(dcx + s * vx, cy + s * vy) for vx, vy in seg_verts],
+                closed=True,
+                facecolor=style.color("seven_segment.segment"),
+                edgecolor=style.color("seven_segment.segment_edge"),
+                linewidth=style.dim("seven_segment.segment_edge_width"),
+                zorder=8,
+            )
+        )
+
+    dp_x = dcx + s * _DP_CENTER[0]
+    dp_y = cy + s * _DP_CENTER[1]
+    axes.add_patch(
+        Circle(
+            (dp_x, dp_y),
+            s * _DP_RADIUS,
+            facecolor=style.color("seven_segment.dp"),
+            edgecolor="none",
+            zorder=8,
+        )
+    )
+
+
+def _seven_segment_pins(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
+    # Draw a dot at each pin hole.
+    for px, py in (geo.hole(p.hole) for p in component.pins):
+        axes.add_patch(
+            Circle(
+                (px, py),
+                style.dim("dot.radius"),
+                facecolor=style.color("seven_segment.pin"),
+                edgecolor=style.color("seven_segment.pin_edge"),
+                linewidth=style.dim("seven_segment.pin_edge_width"),
+                zorder=9,
+            )
+        )
+
+
+@register("7segment")
+def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, style: Style) -> None:
+    x_left, x_right, y_top, y_bottom = _seven_segment_extent(axes, geo, component)
+    cx = (x_left + x_right) / 2.0
+    cy = (y_top + y_bottom) / 2.0
+    s = _DIGIT_SCALE
+
+    bx = x_left - 0.4
+    by = y_bottom - 0.3
+    bw = (x_right - x_left) + 0.8
+    bh = (y_top - y_bottom) + 0.6
+    n_digits = max(1, component.digits)
+    digit_centers, bx, bw = _digit_centers(cx, bx, bw, n_digits, s)
 
     axes.add_patch(
         Rectangle(
@@ -98,42 +151,9 @@ def draw_seven_segment(axes: plt.Axes, geo: Geometry, component: Component, styl
     )
 
     for dcx in digit_centers:
-        for seg_verts in _SEGMENTS:
-            axes.add_patch(
-                Polygon(
-                    [(dcx + s * vx, cy + s * vy) for vx, vy in seg_verts],
-                    closed=True,
-                    facecolor=style.color("seven_segment.segment"),
-                    edgecolor=style.color("seven_segment.segment_edge"),
-                    linewidth=style.dim("seven_segment.segment_edge_width"),
-                    zorder=8,
-                )
-            )
+        _draw_digit(axes, dcx, cy, s, style)
 
-        dp_x = dcx + s * _DP_CENTER[0]
-        dp_y = cy + s * _DP_CENTER[1]
-        axes.add_patch(
-            Circle(
-                (dp_x, dp_y),
-                s * _DP_RADIUS,
-                facecolor=style.color("seven_segment.dp"),
-                edgecolor="none",
-                zorder=8,
-            )
-        )
-
-    if component.pins:
-        for px, py in pin_coords:
-            axes.add_patch(
-                Circle(
-                    (px, py),
-                    style.dim("dot.radius"),
-                    facecolor=style.color("seven_segment.pin"),
-                    edgecolor=style.color("seven_segment.pin_edge"),
-                    linewidth=style.dim("seven_segment.pin_edge_width"),
-                    zorder=9,
-                )
-            )
+    _seven_segment_pins(axes, geo, component, style)
 
     common_tag = "CC" if component.common == "cathode" else "CA"
     label_text = f"{component.ref} {common_tag}" if component.ref else common_tag
