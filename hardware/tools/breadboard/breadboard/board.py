@@ -99,8 +99,8 @@ def _draw_center_channel(
     )
 
 
-def _draw_board_base(axes: plt.Axes, geo: Geometry, style: Style) -> tuple[float, float, float, float]:
-    """Draw the board substrate (shadow, board, bevel, channel) and return its bbox."""
+def _draw_board_base(axes: plt.Axes, geo: Geometry, style: Style) -> None:
+    """Draw the board substrate (shadow, board, bevel, channel)."""
     ys = list(geo.line_y.values())
     top, bottom = max(ys), min(ys)
     board_x, board_y = 0.2, bottom - 0.8
@@ -109,7 +109,6 @@ def _draw_board_base(axes: plt.Axes, geo: Geometry, style: Style) -> tuple[float
     _draw_board_frame(axes, board_x, board_y, board_w, board_h, box, style)
     # Recessed centre channel: a groove *between* rows E and F, clear of holes.
     _draw_center_channel(axes, geo, board_x, board_w, style)
-    return board_x, board_y, board_w, board_h
 
 
 def _draw_socket(
