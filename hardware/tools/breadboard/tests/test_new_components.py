@@ -476,7 +476,8 @@ def test_potentiometer_leads_body_side_endpoint_lies_within_body() -> None:
 def test_relay_with_ref_only_renders_ref_text() -> None:
     """A relay built with ref and no label must draw the ref text, not an empty string.
 
-    Current buggy code renders component.label (which is ""), so no "K1" appears.
+    Regression target: the relay labels with `label or ref`, so a relay given only
+    `ref` (no label) still shows its reference (e.g. "K1").
     """
     fig, axes = plt.subplots()
     geo = Geometry(10)
@@ -495,9 +496,9 @@ def test_relay_with_ref_only_renders_ref_text() -> None:
 def test_relay_bare_leg_list_body_spans_legs() -> None:
     """A relay with only legs (no span, no pins) must draw a body that spans those legs.
 
-    Current buggy code falls back to span=(0,0) -> a degenerate body near column 0
-    that does NOT cover the leg holes. The body rectangle's x-extent must contain
-    every leg's hole x-coordinate, and the width must be clearly non-degenerate.
+    Regression target: the body rectangle's x-extent must contain every leg's hole
+    x-coordinate, and its width must be clearly non-degenerate (not the span=(0,0)
+    fallback that would collapse the body near column 0).
     """
     fig, axes = plt.subplots()
     geo = Geometry(10)
