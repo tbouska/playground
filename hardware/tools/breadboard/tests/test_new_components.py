@@ -179,6 +179,18 @@ def test_seven_segment_empty_pins_warns_and_does_not_crash(tmp_path: Path, caplo
     assert pin_warnings, (
         "expected at least one WARNING referencing pins when 7segment has no pins; got none"
     )
+    # The warning must accurately describe the drawn fallback (PRD 00005): the body is
+    # rendered from the component span, so the message must say so. Binding only on "pin"
+    # would NOT catch a regression to the old misleading "rendering body only" wording,
+    # because "has no pins" still contains "pin" — so assert the intent directly.
+    assert any("from span" in w.lower() for w in pin_warnings), (
+        f"no-pins WARNING must describe the span-based body fallback ('from span'); "
+        f"got: {pin_warnings!r}"
+    )
+    assert not any("rendering body only" in w.lower() for w in all_warnings), (
+        f"no-pins WARNING must not use the old misleading 'rendering body only' wording; "
+        f"got: {all_warnings!r}"
+    )
     # 7segment IS a registered kind: it must reach its drawer (which warns about the
     # missing pins), not fall through to the dispatch loop's "unknown kind" skip.
     # Check the UNFILTERED warning list — filtering to "pin" first would always exclude
