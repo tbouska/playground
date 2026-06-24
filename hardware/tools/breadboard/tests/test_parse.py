@@ -56,3 +56,29 @@ def test_loaded_layout_module_component_has_correct_pins() -> None:
     assert len(module.pins) == 4
     pin_map = {p.name: p.hole for p in module.pins}
     assert pin_map == {"VCC": "A10", "GND": "A14", "D2": "J10", "D3": "J14"}
+
+
+def test_dict_form_legs_rejected_for_non_led_kind() -> None:
+    """Dict-form `legs:` only feeds the RGB-LED `named_legs`; on any other kind it is
+    silently dropped and the part renders degenerate near column 0. Reject it at parse
+    time with an error that names the offending kind, rather than rendering nonsense."""
+    import pytest
+
+    from breadboard.parse import _component_from_dict
+
+    with pytest.raises(ValueError, match="relay"):
+        _component_from_dict(
+            {"kind": "relay", "ref": "K1", "legs": {"COIL": "A1", "NO": "A3"}}
+        )
+
+
+def test_dict_form_legs_allowed_for_led_rgb() -> None:
+    """The RGB LED drawer consumes dict-form legs as `named_legs`; parse must keep
+    accepting it (guards the rejection above from over-reaching)."""
+    from breadboard.parse import _component_from_dict
+
+    comp = _component_from_dict(
+        {"kind": "led-rgb", "ref": "D2", "legs": {"R": "C2", "K": "C3", "G": "C4"}}
+    )
+    assert comp.named_legs == {"R": "C2", "K": "C3", "G": "C4"}
+    assert comp.legs == ()

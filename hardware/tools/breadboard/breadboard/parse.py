@@ -9,6 +9,12 @@ from typing import Any
 
 from breadboard.model import Component, Layout, Pin
 
+# Dict-form `legs:` populates Component.named_legs, which only the RGB-LED drawer
+# (registered for "led" and "led-rgb") consumes. On any other kind it would be
+# silently dropped and the part would render degenerate near column 0, so reject it
+# at parse time instead.
+_NAMED_LEGS_KINDS = frozenset({"led", "led-rgb"})
+
 
 def _component_from_dict(data: dict[str, Any]) -> Component:
     """Build a :class:`Component` from one parsed YAML mapping."""
@@ -22,6 +28,12 @@ def _component_from_dict(data: dict[str, Any]) -> Component:
         if isinstance(data.get("legs"), dict)
         else {}
     )
+    if named_legs and kind not in _NAMED_LEGS_KINDS:
+        raise ValueError(
+            f"component {data.get('ref', '?')!r} (kind {kind!r}): dict-form `legs:` is "
+            f"only supported for {sorted(_NAMED_LEGS_KINDS)} (it feeds named_legs); use "
+            f"a list of hole addresses instead"
+        )
     legs: tuple[str, ...] = (
         tuple(str(item) for item in data["legs"])
         if isinstance(data.get("legs"), list)
