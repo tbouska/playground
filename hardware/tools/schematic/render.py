@@ -79,6 +79,23 @@ class Channel:
 
 
 @dataclass(frozen=True)
+class Button:
+    """Describe a momentary push switch tapping one MCU pin to a net.
+
+    :ivar ref: The reference designator, e.g. ``"SW1"``.
+    :vartype ref: str
+    :ivar gpio: The microcontroller pin the switch reads.
+    :vartype gpio: str
+    :ivar net: The net the far side of the switch ties to, e.g. ``"GND"``.
+    :vartype net: str
+    """
+
+    ref: str
+    gpio: str
+    net: str
+
+
+@dataclass(frozen=True)
 class PowerPin:
     """Describe a microcontroller power pin and the net it ties to.
 
@@ -146,12 +163,15 @@ class Circuit:
     :vartype load: Load
     :ivar channels: The driver channels, ordered top to bottom.
     :vartype channels: tuple[Channel, ...]
+    :ivar buttons: The momentary switches read by the MCU.
+    :vartype buttons: tuple[Button, ...]
     """
 
     title: str
     mcu: Mcu
     load: Load
     channels: tuple[Channel, ...]
+    buttons: tuple[Button, ...]
 
 
 def load_circuit(path: Path) -> Circuit:
@@ -190,7 +210,13 @@ def load_circuit(path: Path) -> Circuit:
         )
         for item in data["channels"]
     )
-    return Circuit(title=data["title"], mcu=mcu, load=load, channels=channels)
+    buttons = tuple(
+        Button(ref=item["ref"], gpio=item["gpio"], net=item["net"])
+        for item in data.get("buttons", [])
+    )
+    return Circuit(
+        title=data["title"], mcu=mcu, load=load, channels=channels, buttons=buttons
+    )
 
 
 def _terminate_net(drawing: schemdraw.Drawing, net: str) -> None:
@@ -221,15 +247,19 @@ def build_drawing(circuit: Circuit) -> schemdraw.Drawing:
     drawing.config(unit=UNIT, fontsize=FONT_SIZE)
 
     channel_count = len(circuit.channels)
-    power_count = len(circuit.mcu.power)
+    # Power pins and button GPIOs share the left edge, ordered top to bottom.
+    left_names = [power.pin for power in circuit.mcu.power] + [
+        button.gpio for button in circuit.buttons
+    ]
+    left_count = len(left_names)
     mcu_pins = [
         elm.IcPin(
             name=channel.gpio, side="right", slot=f"{channel_count - i}/{channel_count}"
         )
         for i, channel in enumerate(circuit.channels)
     ] + [
-        elm.IcPin(name=power.pin, side="left", slot=f"{power_count - i}/{power_count}")
-        for i, power in enumerate(circuit.mcu.power)
+        elm.IcPin(name=name, side="left", slot=f"{left_count - i}/{left_count}")
+        for i, name in enumerate(left_names)
     ]
     mcu = elm.Ic(pins=mcu_pins, pinspacing=PIN_SPACING, edgepadW=2.4, edgepadH=0.7)
     mcu.label(circuit.mcu.label, loc="top", ofst=0.3)
@@ -275,6 +305,12 @@ def build_drawing(circuit: Circuit) -> schemdraw.Drawing:
     for power in circuit.mcu.power:
         drawing += elm.Line().left().at(mcu.absanchors[power.pin]).length(1.4)
         _terminate_net(drawing, power.net)
+
+    for button in circuit.buttons:
+        drawing += elm.Line().left().at(mcu.absanchors[button.gpio]).length(0.7)
+        drawing += elm.Button().left().label(button.ref, fontsize=RESISTOR_FONT_SIZE)
+        drawing += elm.Line().left().length(0.5)
+        _terminate_net(drawing, button.net)
 
     drawing += (
         elm.Line().down().at(load.absanchors[circuit.load.common.pin]).length(1.2)
