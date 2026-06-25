@@ -52,19 +52,19 @@ def test_board_symbol_importable() -> None:
 
 def test_wires_symbols_importable() -> None:
     from breadboard.wires import (
-        _block_rects,
-        _hits_block,
+        _component_rects,
+        _crossings,
+        _route,
         _wire_channels,
-        _wire_points,
         _hop_polyline,
         _draw_wire,
         _draw_wires,
     )
 
-    assert _block_rects is not None
-    assert _hits_block is not None
+    assert _component_rects is not None
+    assert _crossings is not None
+    assert _route is not None
     assert _wire_channels is not None
-    assert _wire_points is not None
     assert _hop_polyline is not None
     assert _draw_wire is not None
     assert _draw_wires is not None

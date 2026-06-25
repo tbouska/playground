@@ -114,16 +114,17 @@ def _draw_board_base(axes: plt.Axes, geo: Geometry, style: Style) -> None:
 def _draw_socket(
     axes: plt.Axes, col: int, y: float, side: float, off: float, style: Style
 ) -> None:
-    """Draw the bevelled socket hole triple (hilite, shadow, fill) at (col, y)."""
-    # Bevelled socket lit from the top-left, matching the board's drop
-    # shadow: a faint highlight peeks out top-left and a faint shadow
-    # bottom-right of the centred face, reading as pressed in.
+    """Draw the bevelled socket hole triple (shadow, hilite, fill) at (col, y)."""
+    # Bevelled socket lit from the top-left: the near (top-left) lip throws a
+    # shadow down into the recess while the far (bottom-right) wall catches the
+    # light, so a faint shadow peeks out top-left and a faint highlight
+    # bottom-right of the centred face, reading as a hole pressed into the board.
     axes.add_patch(
         Rectangle(
             (col - side / 2 - off, y - side / 2 + off),
             side,
             side,
-            facecolor=style.color("hole.hilite"),
+            facecolor=style.color("hole.shadow"),
             edgecolor="none",
             zorder=1.88,
         )
@@ -133,7 +134,7 @@ def _draw_socket(
             (col - side / 2 + off, y - side / 2 - off),
             side,
             side,
-            facecolor=style.color("hole.shadow"),
+            facecolor=style.color("hole.hilite"),
             edgecolor="none",
             zorder=1.9,
         )
