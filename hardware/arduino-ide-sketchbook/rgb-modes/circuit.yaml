@@ -1,0 +1,33 @@
+title: ESP32 RGB LED modes
+
+mcu:
+  label: ESP32-WROOM-32 DevKit
+  power:
+    - pin: "VIN"
+      net: "+5V"
+    - pin: GND
+      net: GND
+
+load:
+  label: RGB LED (common cathode)
+  common:
+    pin: K
+    net: GND
+
+channels:
+  - gpio: GPIO0
+    load_pin: R
+    resistor: { ref: R1, value: "220Ω" }
+  - gpio: GPIO2
+    load_pin: G
+    resistor: { ref: R2, value: "220Ω" }
+  - gpio: GPIO15
+    load_pin: B
+    resistor: { ref: R3, value: "220Ω" }
+
+# Mode button: GPIO14 to GND through a momentary switch. The firmware enables the
+# internal pull-up (INPUT_PULLUP), so no external resistor is drawn.
+buttons:
+  - ref: SW1
+    gpio: GPIO14
+    net: GND
