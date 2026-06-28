@@ -1,0 +1,18 @@
+title: ESP32 Hello World
+
+mcu:
+  label: ESP32-WROOM-32 DevKit
+  power:
+    - pin: GND
+      net: GND
+
+load:
+  label: LED
+  common:
+    pin: K
+    net: GND
+
+channels:
+  - gpio: GPIO2
+    load_pin: A
+    resistor: { ref: R1, value: "220Ω" }
