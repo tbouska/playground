@@ -11,8 +11,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-schematic="${repo_root}/tools/schematic/render.py"
-breadboard="${repo_root}/tools/breadboard/render_layout.py"
+schematic="${repo_root}/tools/dupont/dupont/render/schematic.py"
+breadboard="${repo_root}/tools/dupont/render_layout.py"
 
 target="${1:-${PWD}}"
 

@@ -6,9 +6,10 @@ renders it to SVG and PNG with :mod:`schemdraw`. The YAML file is the source of
 truth that lives in version control; the images are reproducible build outputs.
 
 Imports:
-    dataclasses -- provide the frozen value objects (:class:`Resistor`,
-        :class:`Channel`, :class:`PowerPin`, :class:`TerminalPin`, :class:`Mcu`,
-        :class:`Load`, :class:`Circuit`) that model the parsed description.
+    dupont.formats.circuit.schema -- provide the frozen value objects
+        (:class:`Resistor`, :class:`Channel`, :class:`PowerPin`,
+        :class:`TerminalPin`, :class:`Mcu`, :class:`Load`, :class:`Schematic`)
+        that model the parsed description.
     pathlib -- resolve the input and output file paths.
     sys -- read the optional YAML path from the command line.
     typing -- supply :class:`Any` for the untyped parsed YAML mapping.
@@ -19,17 +20,7 @@ Imports:
         the elements in :mod:`schemdraw.elements`.
 """
 
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#     "schemdraw>=0.19",
-#     "matplotlib>=3.8",
-#     "pyyaml>=6.0",
-# ]
-# ///
-
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +31,17 @@ matplotlib.use("Agg")
 import schemdraw
 import schemdraw.elements as elm
 
+from dupont.formats.circuit.schema import (
+    Button,
+    Channel,
+    Load,
+    Mcu,
+    PowerPin,
+    Resistor,
+    Schematic,
+    TerminalPin,
+)
+
 PIN_SPACING = 2.4
 UNIT = 2.4
 FONT_SIZE = 12
@@ -47,140 +49,13 @@ RESISTOR_FONT_SIZE = 10
 RENDER_DPI = 200
 
 
-@dataclass(frozen=True)
-class Resistor:
-    """Describe a series resistor on one channel.
-
-    :ivar ref: The reference designator, e.g. ``"R1"``.
-    :vartype ref: str
-    :ivar value: The displayed value, e.g. ``"330"``.
-    :vartype value: str
-    """
-
-    ref: str
-    value: str
-
-
-@dataclass(frozen=True)
-class Channel:
-    """Describe one GPIO-to-load channel through a resistor.
-
-    :ivar gpio: The microcontroller pin name driving the channel.
-    :vartype gpio: str
-    :ivar load_pin: The load pin name the channel feeds.
-    :vartype load_pin: str
-    :ivar resistor: The series resistor on the channel.
-    :vartype resistor: Resistor
-    """
-
-    gpio: str
-    load_pin: str
-    resistor: Resistor
-
-
-@dataclass(frozen=True)
-class Button:
-    """Describe a momentary push switch tapping one MCU pin to a net.
-
-    :ivar ref: The reference designator, e.g. ``"SW1"``.
-    :vartype ref: str
-    :ivar gpio: The microcontroller pin the switch reads.
-    :vartype gpio: str
-    :ivar net: The net the far side of the switch ties to, e.g. ``"GND"``.
-    :vartype net: str
-    """
-
-    ref: str
-    gpio: str
-    net: str
-
-
-@dataclass(frozen=True)
-class PowerPin:
-    """Describe a microcontroller power pin and the net it ties to.
-
-    :ivar pin: The pin name, e.g. ``"3V3"``.
-    :vartype pin: str
-    :ivar net: The net name, e.g. ``"+3V3"`` or ``"GND"``.
-    :vartype net: str
-    """
-
-    pin: str
-    net: str
-
-
-@dataclass(frozen=True)
-class TerminalPin:
-    """Describe the load common pin and the net it ties to.
-
-    :ivar pin: The pin name, e.g. ``"K"``.
-    :vartype pin: str
-    :ivar net: The net name, e.g. ``"GND"``.
-    :vartype net: str
-    """
-
-    pin: str
-    net: str
-
-
-@dataclass(frozen=True)
-class Mcu:
-    """Describe the microcontroller block.
-
-    :ivar label: The block label.
-    :vartype label: str
-    :ivar power: The power pins, ordered top to bottom on the left edge.
-    :vartype power: tuple[PowerPin, ...]
-    """
-
-    label: str
-    power: tuple[PowerPin, ...]
-
-
-@dataclass(frozen=True)
-class Load:
-    """Describe the load block.
-
-    :ivar label: The block label.
-    :vartype label: str
-    :ivar common: The shared common pin (anode or cathode).
-    :vartype common: TerminalPin
-    """
-
-    label: str
-    common: TerminalPin
-
-
-@dataclass(frozen=True)
-class Circuit:
-    """Describe the whole circuit parsed from YAML.
-
-    :ivar title: The schematic title.
-    :vartype title: str
-    :ivar mcu: The microcontroller block.
-    :vartype mcu: Mcu
-    :ivar load: The load block.
-    :vartype load: Load
-    :ivar channels: The driver channels, ordered top to bottom.
-    :vartype channels: tuple[Channel, ...]
-    :ivar buttons: The momentary switches read by the MCU.
-    :vartype buttons: tuple[Button, ...]
-    """
-
-    title: str
-    mcu: Mcu
-    load: Load
-    channels: tuple[Channel, ...]
-    buttons: tuple[Button, ...]
-
-
-def load_circuit(path: Path) -> Circuit:
-    """Parse a YAML circuit description into a :class:`Circuit`.
+def load_circuit(path: Path) -> Schematic:
+    """Parse a YAML circuit description into a :class:`Schematic`.
 
     :param path: The path to the YAML description.
     :type path: Path
     :returns: The parsed circuit.
-    :rtype: Circuit
+    :rtype: Schematic
     :raises KeyError: If a required key is missing from the description.
     """
     import yaml
@@ -214,7 +89,7 @@ def load_circuit(path: Path) -> Circuit:
         Button(ref=item["ref"], gpio=item["gpio"], net=item["net"])
         for item in data.get("buttons", [])
     )
-    return Circuit(
+    return Schematic(
         title=data["title"], mcu=mcu, load=load, channels=channels, buttons=buttons
     )
 
@@ -235,11 +110,11 @@ def _terminate_net(drawing: schemdraw.Drawing, net: str) -> None:
         drawing += elm.Vdd().label(net)
 
 
-def build_drawing(circuit: Circuit) -> schemdraw.Drawing:
+def build_drawing(circuit: Schematic) -> schemdraw.Drawing:
     """Build the schemdraw drawing for a parsed circuit.
 
     :param circuit: The circuit to render.
-    :type circuit: Circuit
+    :type circuit: Schematic
     :returns: The assembled drawing, ready to save.
     :rtype: schemdraw.Drawing
     """
@@ -320,11 +195,11 @@ def build_drawing(circuit: Circuit) -> schemdraw.Drawing:
     return drawing
 
 
-def render(circuit: Circuit, out_stem: Path) -> None:
+def render(circuit: Schematic, out_stem: Path) -> None:
     """Render a circuit to ``<stem>.svg`` and ``<stem>.png``.
 
     :param circuit: The circuit to render.
-    :type circuit: Circuit
+    :type circuit: Schematic
     :param out_stem: The output path without extension.
     :type out_stem: Path
     :returns: None. The function writes the two image files to disk.

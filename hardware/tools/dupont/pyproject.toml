@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dupont"
+version = "0.1.0"
+description = "Consolidated schematic and breadboard renderers for hardware boards."
+requires-python = ">=3.11"
+dependencies = [
+    "schemdraw==0.19",
+    "matplotlib==3.11.0",
+    "pyyaml==6.0.3",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["dupont", "breadboard"]

@@ -28,7 +28,7 @@ import render_layout
 _TESTS_DIR = Path(__file__).parent
 _GOLDEN_DIR = _TESTS_DIR / "fixtures" / "golden"
 _FIXTURE_DIR = _TESTS_DIR / "fixtures"
-_REPO_ROOT = Path(__file__).resolve().parents[4]
+_REPO_ROOT = Path(__file__).resolve().parents[5]
 
 _CLIP_ID_RE = re.compile(r'(id="|url\(#)(p[0-9a-f]{9,})')
 
@@ -55,7 +55,7 @@ def all_components_layout_path() -> Path:
 
 @pytest.fixture
 def rgb_layout_path() -> Path:
-    path = _REPO_ROOT / "hardware" / "arduino-ide-sketchbook" / "rgb-led-rainbow-cycle" / "layout.yaml"
+    path = _REPO_ROOT / "hardware" / "arduino-ide-sketchbook" / "keyestudio-esp32-learning-kit-basic-edition" / "rgb-led-rainbow-cycle" / "layout.yaml"
     assert path.exists(), f"RGB layout not found at {path}"
     return path
 
