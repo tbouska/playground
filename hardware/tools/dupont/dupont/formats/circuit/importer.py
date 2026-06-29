@@ -38,17 +38,12 @@ def import_circuit(source: str | Path | dict) -> Circuit:
 
     # MCU component
     power_entries = mcu_data.get("power", [])
-    mcu_pins = []
-    idx = 0
-    for entry in power_entries:
-        mcu_pins.append(Pin(entry["pin"], entry["pin"], "power", idx))
-        idx += 1
-    for ch in channels:
-        mcu_pins.append(Pin(ch["gpio"], ch["gpio"], "gpio", idx))
-        idx += 1
-    for btn in buttons:
-        mcu_pins.append(Pin(btn["gpio"], btn["gpio"], "gpio", idx))
-        idx += 1
+    _mcu_pin_spec = (
+        [(e["pin"], "power") for e in power_entries]
+        + [(ch["gpio"], "gpio") for ch in channels]
+        + [(btn["gpio"], "gpio") for btn in buttons]
+    )
+    mcu_pins = [Pin(n, n, t, i) for i, (n, t) in enumerate(_mcu_pin_spec)]
     u1 = Component(u1_id, "mcu", tuple(mcu_pins), label=mcu_data["label"])
 
     # Resistor components
@@ -63,14 +58,11 @@ def import_circuit(source: str | Path | dict) -> Circuit:
     ]
 
     # LED component
-    led_pins = []
-    idx = 0
-    for ch in channels:
-        name = normalize_pin_name(led_kind, ch["load_pin"])
-        led_pins.append(Pin(name, name, "passive", idx))
-        idx += 1
     common_pin_name = normalize_pin_name(led_kind, load_data["common"]["pin"])
-    led_pins.append(Pin(common_pin_name, common_pin_name, "passive", idx))
+    _led_names = [
+        normalize_pin_name(led_kind, ch["load_pin"]) for ch in channels
+    ] + [common_pin_name]
+    led_pins = [Pin(n, n, "passive", i) for i, n in enumerate(_led_names)]
     d1 = Component(d1_id, led_kind, tuple(led_pins))
 
     # Button components
