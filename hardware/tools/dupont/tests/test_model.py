@@ -159,3 +159,41 @@ def test_load_model_accepts_path(hello_world_circuit: Circuit, tmp_path: Path) -
     yaml_path = tmp_path / "circuit.yaml"
     yaml_path.write_text(dump_model(hello_world_circuit), encoding="utf-8")
     assert load_model(yaml_path) == hello_world_circuit
+
+
+def test_round_trips_circuit_with_placement() -> None:
+    c = Circuit(
+        title="Placement Test",
+        components=(
+            Component(
+                instance_id="U1",
+                kind="mcu",
+                pins=(Pin("GND", "GND", "power", 0),),
+            ),
+            Component(
+                instance_id="D1",
+                kind="led",
+                pins=(Pin("anode", "anode", "passive", 0),),
+            ),
+        ),
+        nets=(
+            Net("GND", (PinRef("U1", "GND"), PinRef("D1", "anode")), "schematic/common"),
+        ),
+        placements=(
+            Placement(
+                component_ref="U1",
+                coords={"hole": "G25"},
+                rotation=0.0,
+                source="breadboard",
+                provenance="breadboard/layout",
+            ),
+            Placement(
+                component_ref="D1",
+                coords={"px": [100, 60]},
+                rotation=90.0,
+                source="breadboard",
+                provenance="breadboard/layout",
+            ),
+        ),
+    )
+    assert load_model(dump_model(c)) == c
