@@ -23,6 +23,8 @@ import os
 import re
 from pathlib import Path
 
+import pytest
+
 from dupont.formats.circuit.importer import import_circuit
 from dupont.render.schematic import render_schematic
 
@@ -75,9 +77,22 @@ def _run_parity(circuit_path: Path, golden_name: str, tmp_path: Path) -> None:
     )
 
 
-def test_hello_world_schematic_parity(tmp_path: Path) -> None:
-    _run_parity(
-        _circuit_path("espx", "espx-1-1-2-hello-world"),
-        "schematic_hello_world",
-        tmp_path,
-    )
+_KEYESTUDIO = "keyestudio-esp32-learning-kit-basic-edition"
+
+# (path parts under arduino-ide-sketchbook, golden basename) for every project
+# circuit.yaml. This is the schematic migration gate: each must re-render with no
+# visual regression through the interchange model.
+_CIRCUITS = [
+    (("espx", "espx-1-1-2-hello-world"), "schematic_hello_world"),
+    ((_KEYESTUDIO, "rgb-led-rainbow-cycle"), "schematic_rgb_led_rainbow_cycle"),
+    ((_KEYESTUDIO, "rgb-modes"), "schematic_rgb_modes"),
+]
+
+
+@pytest.mark.parametrize(
+    "parts, golden_name", _CIRCUITS, ids=[name for _, name in _CIRCUITS]
+)
+def test_schematic_render_parity(
+    parts: tuple[str, ...], golden_name: str, tmp_path: Path
+) -> None:
+    _run_parity(_circuit_path(*parts), golden_name, tmp_path)
