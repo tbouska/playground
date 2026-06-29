@@ -15,9 +15,8 @@ def import_circuit(source: str | Path | dict) -> Circuit:
     elif isinstance(source, Path):
         data = yaml.safe_load(source.read_text())
     else:
-        p = Path(source)
-        if p.exists():
-            data = yaml.safe_load(p.read_text())
+        if "\n" not in source and Path(source).exists():
+            data = yaml.safe_load(Path(source).read_text())
         else:
             data = yaml.safe_load(source)
 
@@ -63,7 +62,7 @@ def import_circuit(source: str | Path | dict) -> Circuit:
         normalize_pin_name(led_kind, ch["load_pin"]) for ch in channels
     ] + [common_pin_name]
     led_pins = [Pin(n, n, "passive", i) for i, n in enumerate(_led_names)]
-    d1 = Component(d1_id, led_kind, tuple(led_pins))
+    d1 = Component(d1_id, led_kind, tuple(led_pins), label=load_data.get("label", ""))
 
     # Button components
     button_components = [
