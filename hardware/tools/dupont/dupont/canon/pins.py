@@ -6,8 +6,7 @@ _NORMALIZE: dict[str, dict[str, str]] = {
 }
 
 _DENORMALIZE: dict[str, dict[str, str]] = {
-    "led": {"anode": "A", "cathode": "K"},
-    "led-rgb": {"cathode": "K"},
+    kind: {v: k for k, v in mapping.items()} for kind, mapping in _NORMALIZE.items()
 }
 
 
