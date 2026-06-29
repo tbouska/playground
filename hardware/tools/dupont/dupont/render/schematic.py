@@ -6,23 +6,24 @@ renders it to SVG and PNG with :mod:`schemdraw`. The YAML file is the source of
 truth that lives in version control; the images are reproducible build outputs.
 
 Imports:
-    dupont.formats.circuit.schema -- provide the frozen value objects
-        (:class:`Resistor`, :class:`Channel`, :class:`PowerPin`,
-        :class:`TerminalPin`, :class:`Mcu`, :class:`Load`, :class:`Schematic`)
-        that model the parsed description.
+    dupont.model.entities -- the canonical :class:`Circuit` interchange model
+        the draw path now reads.
+    dupont.formats.circuit.importer -- :func:`import_circuit` parses a
+        ``circuit.yaml`` file into the :class:`Circuit` model.
+    dupont.formats.circuit.exporter -- :func:`collapse_to_schematic` collapses
+        the :class:`Circuit` model back to the :class:`Schematic` draw structures.
+    dupont.formats.circuit.schema -- provides :class:`Schematic`, the draw-side
+        value object :func:`build_drawing` consumes.
     pathlib -- resolve the input and output file paths.
     sys -- read the optional YAML path from the command line.
-    typing -- supply :class:`Any` for the untyped parsed YAML mapping.
     matplotlib -- force the non-interactive ``Agg`` backend before schemdraw
         imports it, so rendering works headless in CI.
-    yaml -- parse the description with :func:`yaml.safe_load`.
     schemdraw -- build and save the drawing via :class:`schemdraw.Drawing` and
         the elements in :mod:`schemdraw.elements`.
 """
 
 import sys
 from pathlib import Path
-from typing import Any
 
 import matplotlib
 
@@ -31,16 +32,10 @@ matplotlib.use("Agg")
 import schemdraw
 import schemdraw.elements as elm
 
-from dupont.formats.circuit.schema import (
-    Button,
-    Channel,
-    Load,
-    Mcu,
-    PowerPin,
-    Resistor,
-    Schematic,
-    TerminalPin,
-)
+from dupont.formats.circuit.exporter import collapse_to_schematic
+from dupont.formats.circuit.importer import import_circuit
+from dupont.formats.circuit.schema import Schematic
+from dupont.model.entities import Circuit
 
 PIN_SPACING = 2.4
 UNIT = 2.4
@@ -50,48 +45,20 @@ RENDER_DPI = 200
 
 
 def load_circuit(path: Path) -> Schematic:
-    """Parse a YAML circuit description into a :class:`Schematic`.
+    """Load a ``circuit.yaml`` into a :class:`Schematic` via the interchange model.
+
+    The draw path no longer parses channels directly: the file is imported into
+    the canonical :class:`Circuit` model and collapsed back to the
+    :class:`Schematic` draw structures, so the rendered SVG is byte-identical to
+    the pre-migration direct-parse path.
 
     :param path: The path to the YAML description.
     :type path: Path
-    :returns: The parsed circuit.
+    :returns: The schematic collapsed from the interchange model.
     :rtype: Schematic
-    :raises KeyError: If a required key is missing from the description.
+    :raises ValueError: If a required key is missing from the description.
     """
-    import yaml
-
-    data: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
-    mcu_data: dict[str, Any] = data["mcu"]
-    load_data: dict[str, Any] = data["load"]
-    mcu = Mcu(
-        label=mcu_data["label"],
-        power=tuple(
-            PowerPin(pin=item["pin"], net=item["net"]) for item in mcu_data["power"]
-        ),
-    )
-    load = Load(
-        label=load_data["label"],
-        common=TerminalPin(
-            pin=load_data["common"]["pin"], net=load_data["common"]["net"]
-        ),
-    )
-    channels = tuple(
-        Channel(
-            gpio=item["gpio"],
-            load_pin=item["load_pin"],
-            resistor=Resistor(
-                ref=item["resistor"]["ref"], value=item["resistor"]["value"]
-            ),
-        )
-        for item in data["channels"]
-    )
-    buttons = tuple(
-        Button(ref=item["ref"], gpio=item["gpio"], net=item["net"])
-        for item in data.get("buttons", [])
-    )
-    return Schematic(
-        title=data["title"], mcu=mcu, load=load, channels=channels, buttons=buttons
-    )
+    return collapse_to_schematic(import_circuit(path))
 
 
 def _terminate_net(drawing: schemdraw.Drawing, net: str) -> None:
@@ -210,6 +177,23 @@ def render(circuit: Schematic, out_stem: Path) -> None:
     drawing.save(str(out_stem.with_suffix(".png")), dpi=RENDER_DPI)
 
 
+def render_schematic(circuit: Circuit, out_stem: Path) -> None:
+    """Render a schematic FROM THE INTERCHANGE MODEL to ``<stem>.svg`` + ``.png``.
+
+    Collapses the :class:`Circuit` model to its :class:`Schematic` draw
+    structures and saves the images. :func:`collapse_to_schematic` is the only
+    model-to-draw bridge, so no channel parsing happens in this draw path.
+
+    :param circuit: The interchange model to render.
+    :type circuit: Circuit
+    :param out_stem: The output path without extension.
+    :type out_stem: Path
+    :returns: None. The function writes the two image files to disk.
+    :rtype: None
+    """
+    render(collapse_to_schematic(circuit), out_stem)
+
+
 def main() -> None:
     """Parse the YAML path from the command line and render the circuit.
 
@@ -217,8 +201,8 @@ def main() -> None:
     :rtype: None
     """
     source = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("circuit.yaml")
-    circuit = load_circuit(source)
-    render(circuit, source.with_suffix(""))
+    circuit = import_circuit(source)
+    render_schematic(circuit, source.with_suffix(""))
 
 
 if __name__ == "__main__":
