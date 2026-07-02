@@ -137,14 +137,14 @@ def import_layout(source: str | Path | dict) -> Circuit:
             for index, (raw_pin, _hole) in enumerate(component_pins(led))
         )
         components.append(
-            Component(led_id, led_kind, led_pins, label=led.label or "", value=(led.value or None))
+            Component(led_id, led_kind, led_pins, label=led.label, value=(led.value or None))
         )
 
     placements = []
     for component in layout.components:
         if component is module:
             component_ref = mcu_id
-        elif led is not None and component is led:
+        elif component is led:
             component_ref = led_id
         else:
             component_ref = component.ref
@@ -172,5 +172,4 @@ def import_layout(source: str | Path | dict) -> Circuit:
         components=tuple(components),
         nets=nets,
         placements=tuple(placements),
-        roles=(),
     )
