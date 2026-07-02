@@ -23,7 +23,7 @@ from pathlib import Path
 
 from dupont.formats.circuit.exporter import export_circuit
 from dupont.formats.circuit.importer import import_circuit
-from dupont.migrate import migrate_circuits
+from dupont.migrate import MigrationError, migrate_circuit
 from dupont.model.serialize import load_model
 
 _DIRECTIONS = ("import", "export", "convert")
@@ -71,12 +71,15 @@ def _do_import(project: Path) -> int:
     if not circuits:
         print(f"no circuit.yaml found under {project}", file=sys.stderr)
         return 1
-    report = migrate_circuits(circuits, project)
-    for path in report.migrated:
-        print(f"imported {path}")
-    for source, reason in report.failed:
-        print(f"FAILED {source}: {reason}", file=sys.stderr)
-    return 1 if report.failed else 0
+    failed = False
+    for source in circuits:
+        try:
+            written = migrate_circuit(source, source.parent)
+            print(f"imported {written}")
+        except MigrationError as exc:
+            failed = True
+            print(f"FAILED {exc.source}: {exc.schema_diff}", file=sys.stderr)
+    return 1 if failed else 0
 
 
 def _do_convert(project: Path) -> int:
