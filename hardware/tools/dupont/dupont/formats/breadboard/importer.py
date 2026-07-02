@@ -67,8 +67,14 @@ def import_layout(source: str | Path | dict) -> Circuit:
     layout = _layout_from_source(source)
     raw_nets = extract_nets(layout)
 
-    module = next(c for c in layout.components if c.kind == "module")
-    led = next((c for c in layout.components if c.kind in ("led", "led-rgb")), None)
+    modules = [c for c in layout.components if c.kind == "module"]
+    if len(modules) != 1:
+        raise ValueError(f"expected exactly one 'module' (MCU) component, found {len(modules)}")
+    module = modules[0]
+    leds = [c for c in layout.components if c.kind in ("led", "led-rgb")]
+    if len(leds) > 1:
+        raise ValueError(f"expected at most one led/led-rgb component, found {len(leds)}")
+    led = leds[0] if leds else None
     led_kind = led.kind if led else None
     resistors = [c for c in layout.components if c.kind == "resistor"]
 
@@ -120,21 +126,16 @@ def import_layout(source: str | Path | dict) -> Circuit:
         Component(
             resistor.ref,
             "resistor",
-            (Pin("1", "1", "pin", 0), Pin("2", "2", "pin", 1)),
+            (Pin("1", "1", "passive", 0), Pin("2", "2", "passive", 1)),
             value=(resistor.value or None),
         )
         for resistor in resistors
     ]
     components = [mcu_component, *resistor_components]
     if led is not None:
+        led_pin_names = [remap[(led.ref, raw_pin)][1] for raw_pin, _hole in component_pins(led)]
         led_pins = tuple(
-            Pin(
-                remap[(led.ref, raw_pin)][1],
-                remap[(led.ref, raw_pin)][1],
-                "pin",
-                index,
-            )
-            for index, (raw_pin, _hole) in enumerate(component_pins(led))
+            Pin(name, name, "passive", index) for index, name in enumerate(led_pin_names)
         )
         components.append(
             Component(led_id, led_kind, led_pins, label=led.label, value=(led.value or None))

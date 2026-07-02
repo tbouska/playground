@@ -189,6 +189,31 @@ def test_import_layout_unmapped_kind_raises_value_error_naming_kind(kind):
         import_layout(layout)
 
 
+def test_import_layout_no_module_raises_value_error():
+    """A layout with no MCU 'module' cannot be canonicalized - fail loud."""
+    layout = {
+        "title": "t",
+        "breadboard": {"columns": 30},
+        "components": [{"kind": "resistor", "ref": "R1", "legs": ["G10", "G14"]}],
+    }
+    with pytest.raises(ValueError, match="module"):
+        import_layout(layout)
+
+
+def test_import_layout_multiple_modules_raises_value_error():
+    """Multi-module layouts are out of v1 scope - fail loud, not a cryptic KeyError."""
+    layout = {
+        "title": "t",
+        "breadboard": {"columns": 30},
+        "components": [
+            {"kind": "module", "ref": "U1", "pins": [{"name": "GPIO2", "hole": "I5"}]},
+            {"kind": "module", "ref": "U2", "pins": [{"name": "GPIO4", "hole": "I8"}]},
+        ],
+    }
+    with pytest.raises(ValueError, match="module"):
+        import_layout(layout)
+
+
 # ---------------------------------------------------------------------------
 # MCU-adjacency canonicalization is order-invariant
 # ---------------------------------------------------------------------------
