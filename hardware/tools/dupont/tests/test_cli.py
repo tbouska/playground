@@ -58,6 +58,29 @@ def test_export_after_import_regenerates_circuit(project: Path) -> None:
     assert import_circuit(regenerated) == import_circuit(project / "circuit.yaml")
 
 
+def test_import_writes_each_model_beside_its_source(tmp_path: Path) -> None:
+    root = tmp_path / "root"
+    sketch_a = root / "sketch_a"
+    sketch_b = root / "sketch_b"
+    sketch_a.mkdir(parents=True)
+    sketch_b.mkdir(parents=True)
+    (sketch_a / "circuit.yaml").write_text(_HELLO, encoding="utf-8")
+    (sketch_b / "circuit.yaml").write_text(_HELLO, encoding="utf-8")
+
+    assert main(["import", "--project", str(root)]) == 0
+
+    model_a = sketch_a / "sketch_a.model.yaml"
+    model_b = sketch_b / "sketch_b.model.yaml"
+    assert model_a.exists()
+    assert model_b.exists()
+
+    assert not (root / "sketch_a.model.yaml").exists()
+    assert not (root / "sketch_b.model.yaml").exists()
+
+    assert load_model(model_a) == import_circuit(sketch_a / "circuit.yaml")
+    assert load_model(model_b) == import_circuit(sketch_b / "circuit.yaml")
+
+
 def test_unsupported_direction_fails_loud(
     project: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
