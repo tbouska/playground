@@ -268,6 +268,28 @@ def test_led_rgb_dict_legs_kind_and_pin_normalization():
 # ---------------------------------------------------------------------------
 
 
+def test_import_layout_canonicalizes_button_with_identity_pin_remap():
+    """A button's legs are a list of hole addresses (not a dict like led-rgb).
+    They canonicalize with an identity remap: layout ref -> instance_id,
+    kind stays 'button', and pins are named '1'..'N' by leg position."""
+    layout = {
+        "title": "t",
+        "breadboard": {"columns": 50},
+        "components": [
+            {"kind": "module", "ref": "U1", "pins": [{"name": "GPIO2", "hole": "I5"}]},
+            {"kind": "button", "ref": "SW1", "legs": ["E43", "E45", "F43", "F45"]},
+        ],
+    }
+    circuit = import_layout(layout)
+    button = _component(circuit, "SW1")
+    assert button.kind == "button"
+    assert [p.name for p in button.pins] == ["1", "2", "3", "4"]
+    _net_by_members(circuit, {("SW1", "1")})
+    _net_by_members(circuit, {("SW1", "2")})
+    _net_by_members(circuit, {("SW1", "3")})
+    _net_by_members(circuit, {("SW1", "4")})
+
+
 def test_collapse_to_layout_raises_value_error_when_board_placement_missing():
     circuit = Circuit(
         title="t",

@@ -82,3 +82,39 @@ def test_check_strict_flag_is_accepted_and_still_returns_zero_for_equivalent_pro
 ) -> None:
     rc = main(["check", "--project", str(tmp_path), "--strict"])
     assert rc == 0
+
+
+def test_check_isolates_a_failing_dual_format_dir_and_still_processes_others(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    good = tmp_path / "good"
+    good.mkdir()
+    (good / "circuit.yaml").write_text(
+        (_HELLO / "circuit.yaml").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (good / "layout.yaml").write_text(
+        (_HELLO / "layout.yaml").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    (bad / "circuit.yaml").write_text(
+        (_HELLO / "circuit.yaml").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (bad / "layout.yaml").write_text(
+        "title: bad\n"
+        "breadboard: {columns: 10}\n"
+        "components:\n"
+        "  - {kind: capacitor, ref: C1, legs: [A1, A2]}\n",
+        encoding="utf-8",
+    )
+
+    rc = main(["check", "--project", str(tmp_path)])
+
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert captured.err.strip() != ""
+    assert "fail" in captured.err.lower()
+    assert bad.name in captured.err
+    match = re.search(r"^(\d+) errors, (\d+) warnings$", captured.out, flags=re.MULTILINE)
+    assert match is not None
