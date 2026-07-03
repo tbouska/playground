@@ -135,6 +135,23 @@ def test_part_without_placement_defaults_to_origin() -> None:
     assert part["top"] == 0.0
 
 
+def test_part_position_from_hole_coords_uses_measured_scale() -> None:
+    """A layout placement carrying grid/hole coords (no px) exports top/left via
+    grid.geometry.to_px of its anchor hole, not the (0,0) default — PRD/design
+    'map grid coords -> px via the measured scale'."""
+    from dupont.grid.geometry import to_px
+
+    component = _component("R1", "resistor", ["1", "2"])
+    placement = Placement("R1", {"pins": [{"hole": "F12"}]}, 0.0, "breadboard", "test")
+    circuit = Circuit(
+        title="t", components=(component,), nets=(), placements=(placement,)
+    )
+    part = export_wokwi(circuit)["parts"][0]
+    expected_x, expected_y = to_px("F12")
+    assert (part["left"], part["top"]) == (expected_x, expected_y)
+    assert (part["left"], part["top"]) != (0.0, 0.0)
+
+
 # ---------------------------------------------------------------------------
 # Connections: endpoint format, denormalized pins, spanning edges
 # ---------------------------------------------------------------------------
@@ -226,6 +243,18 @@ def test_board_pins_are_not_pin_set_validated() -> None:
 
     connections = export_wokwi(circuit)["connections"]
     assert set(connections[0][:2]) == {"u1:99", "r1:1"}
+
+
+def test_mcu_gpio_exception_pin_exports_board_label() -> None:
+    """A net using an mcu alt-name GPIO (GPIO1) emits its board label 'TX', not
+    the bare digit '1' — canon_pin_to_wokwi is the inverse of board_pin_to_canon."""
+    u1 = _component("U1", "mcu", ["GPIO1"])
+    r1 = _component("R1", "resistor", ["1"])
+    net = _net("n1", [("U1", "GPIO1"), ("R1", "1")])
+    circuit = Circuit(title="t", components=(u1, r1), nets=(net,))
+
+    edge = export_wokwi(circuit)["connections"][0]
+    assert set(edge[:2]) == {"u1:TX", "r1:1"}
 
 
 # ---------------------------------------------------------------------------
