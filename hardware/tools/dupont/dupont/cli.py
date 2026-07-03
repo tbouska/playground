@@ -161,10 +161,15 @@ def _do_check(project: Path, strict: bool) -> int:
         return 1
     failed = False
     for directory in dual_format_dirs:
-        schematic = import_circuit(directory / "circuit.yaml")
-        breadboard = import_layout(directory / "layout.yaml")
-        findings = check_connectivity(schematic, breadboard)
-        records, summary = format_report(findings, strict)
+        try:
+            schematic = import_circuit(directory / "circuit.yaml")
+            breadboard = import_layout(directory / "layout.yaml")
+            findings = check_connectivity(schematic, breadboard)
+            records, summary = format_report(findings, strict)
+        except (ValueError, KeyError) as exc:
+            failed = True
+            print(f"FAILED {directory}: {exc}", file=sys.stderr)
+            continue
         print(summary)
         if any(record["severity"] == "error" for record in records):
             failed = True

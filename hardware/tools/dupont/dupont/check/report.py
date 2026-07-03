@@ -12,6 +12,10 @@ DEFAULT_SEVERITY: dict[str, str] = {
 
 
 def format_report(findings: list[Finding], strict: bool = False) -> tuple[list[dict], str]:
+    """Build (records, human summary) from findings; strict promotes warnings to errors.
+
+    Writes no files.
+    """
     records = []
     for finding in findings:
         severity = DEFAULT_SEVERITY[finding.kind]

@@ -69,34 +69,34 @@ def _net_mismatch_findings(schematic: Circuit, breadboard: Circuit) -> list[Find
     breadboard_groups = _net_groups(breadboard)
 
     findings = []
-    for members, net in schematic_groups.items():
-        if members not in breadboard_groups:
-            entity = _net_entity(net)
-            findings.append(
-                Finding(
-                    severity="error",
-                    kind="net_mismatch",
-                    entity=entity,
-                    schematic_value=entity,
-                    breadboard_value="",
-                    schematic_provenance=net.provenance,
-                    breadboard_provenance="",
-                )
+    for members in schematic_groups.keys() - breadboard_groups.keys():
+        net = schematic_groups[members]
+        entity = _net_entity(net)
+        findings.append(
+            Finding(
+                severity="error",
+                kind="net_mismatch",
+                entity=entity,
+                schematic_value=entity,
+                breadboard_value="",
+                schematic_provenance=net.provenance,
+                breadboard_provenance="",
             )
-    for members, net in breadboard_groups.items():
-        if members not in schematic_groups:
-            entity = _net_entity(net)
-            findings.append(
-                Finding(
-                    severity="error",
-                    kind="net_mismatch",
-                    entity=entity,
-                    schematic_value="",
-                    breadboard_value=entity,
-                    schematic_provenance="",
-                    breadboard_provenance=net.provenance,
-                )
+        )
+    for members in breadboard_groups.keys() - schematic_groups.keys():
+        net = breadboard_groups[members]
+        entity = _net_entity(net)
+        findings.append(
+            Finding(
+                severity="error",
+                kind="net_mismatch",
+                entity=entity,
+                schematic_value="",
+                breadboard_value=entity,
+                schematic_provenance="",
+                breadboard_provenance=net.provenance,
             )
+        )
     return findings
 
 
@@ -155,6 +155,7 @@ def _uncanonical_component_findings(schematic: Circuit, breadboard: Circuit) -> 
 
 
 def check_connectivity(schematic: Circuit, breadboard: Circuit) -> list[Finding]:
+    """Compare two canonicalized Circuits and return Findings sorted by (kind, entity)."""
     findings = [
         *_component_findings(schematic, breadboard),
         *_net_mismatch_findings(schematic, breadboard),
