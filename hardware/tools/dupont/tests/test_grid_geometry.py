@@ -190,6 +190,16 @@ def test_compare_geometry_returns_no_findings_without_wokwi_breadboard_marker() 
     assert compare_geometry(layout, wokwi) == []
 
 
+def test_compare_geometry_returns_no_findings_when_marker_but_no_shared_geometry() -> None:
+    """A Wokwi circuit carrying the breadboard marker but sharing no
+    geometry-bearing component with the layout is connectivity-only: compare
+    returns [] rather than propagating register()'s no-shared ValueError."""
+    layout = _layout_circuit({"C1": "B1"})
+    wokwi = _wokwi_circuit({})  # only the __wokwi_breadboard__ marker; no shared component px
+
+    assert compare_geometry(layout, wokwi) == []
+
+
 def test_compare_geometry_raises_runtime_error_when_scale_not_measured(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
