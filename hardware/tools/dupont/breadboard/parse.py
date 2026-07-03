@@ -56,6 +56,17 @@ def _component_from_dict(data: dict[str, Any]) -> Component:
     )
 
 
+def parse_layout_data(data: dict[str, Any]) -> Layout:
+    """Build a :class:`Layout` from a parsed YAML mapping."""
+    components = tuple(_component_from_dict(item) for item in data["components"])
+    return Layout(
+        title=str(data.get("title", "Breadboard layout")),
+        columns=int(data["breadboard"]["columns"]),
+        components=components,
+        style=data.get("style"),
+    )
+
+
 def load_layout(path: Path) -> Layout:
     """Parse a YAML hole-placement description into a :class:`Layout`.
 
@@ -68,10 +79,4 @@ def load_layout(path: Path) -> Layout:
     import yaml
 
     data: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
-    components = tuple(_component_from_dict(item) for item in data["components"])
-    return Layout(
-        title=str(data.get("title", "Breadboard layout")),
-        columns=int(data["breadboard"]["columns"]),
-        components=components,
-        style=data.get("style"),
-    )
+    return parse_layout_data(data)

@@ -32,6 +32,18 @@ def component_pins(component: Component) -> list[tuple[str, str]]:
     raise ValueError(f"component kind has no pin mapping: {kind!r}")
 
 
+def _find(parent: dict[tuple, tuple], node: tuple) -> tuple:
+    parent.setdefault(node, node)
+    while parent[node] != node:
+        parent[node] = parent[parent[node]]
+        node = parent[node]
+    return node
+
+
+def _union(parent: dict[tuple, tuple], a: tuple, b: tuple) -> None:
+    parent[_find(parent, a)] = _find(parent, b)
+
+
 def extract_nets(layout: Layout) -> tuple[Net, ...]:
     """Extract the electrical nets from a breadboard layout.
 
@@ -41,36 +53,33 @@ def extract_nets(layout: Layout) -> tuple[Net, ...]:
     :rtype: tuple[Net, ...]
     """
     parent: dict[tuple, tuple] = {}
-
-    def find(node: tuple) -> tuple:
-        parent.setdefault(node, node)
-        while parent[node] != node:
-            parent[node] = parent[parent[node]]
-            node = parent[node]
-        return node
-
-    def union(a: tuple, b: tuple) -> None:
-        parent[find(a)] = find(b)
-
     node_pins: dict[tuple, list[PinRef]] = {}
     for component in layout.components:
         for pin_name, hole in component_pins(component):
-            node = find(node_key(hole))
+            node = _find(parent, node_key(hole))
             node_pins.setdefault(node, []).append(PinRef(component.ref, pin_name))
 
     wires: list[tuple[str, str]] = []
     for component in layout.components:
         if component.kind == "wire":
-            union(node_key(component.endpoints[0]), node_key(component.endpoints[1]))
+            _union(parent, node_key(component.endpoints[0]), node_key(component.endpoints[1]))
             wires.append(component.endpoints)
 
+    return _build_nets(parent, node_pins, wires)
+
+
+def _build_nets(
+    parent: dict[tuple, tuple],
+    node_pins: dict[tuple, list[PinRef]],
+    wires: list[tuple[str, str]],
+) -> tuple[Net, ...]:
     groups: dict[tuple, set] = {}
     for node in list(parent):
-        groups.setdefault(find(node), set()).add(node)
+        groups.setdefault(_find(parent, node), set()).add(node)
 
     wires_by_root: dict[tuple, list[tuple[str, str]]] = {}
     for endpoints in wires:
-        wires_by_root.setdefault(find(node_key(endpoints[0])), []).append(endpoints)
+        wires_by_root.setdefault(_find(parent, node_key(endpoints[0])), []).append(endpoints)
 
     pending: list[tuple[tuple, tuple[PinRef, ...], str]] = []
     for root, nodes in groups.items():
@@ -78,17 +87,16 @@ def extract_nets(layout: Layout) -> tuple[Net, ...]:
         if not members:
             continue
         members.sort(key=lambda ref: (ref.instance_id, ref.pin))
+        node_key_min = min(nodes)
         group_wires = wires_by_root.get(root)
         if group_wires:
             first, second = sorted(min(group_wires, key=sorted))
             provenance = f"breadboard/jumper {first}-{second}"
+        elif node_key_min[0] == "rail":
+            provenance = f"breadboard/rail {node_key_min[1]}"
         else:
-            key = min(nodes)
-            if key[0] == "rail":
-                provenance = f"breadboard/rail {key[1]}"
-            else:
-                provenance = f"breadboard/column-merge col{key[2]}"
-        pending.append((min(nodes), tuple(members), provenance))
+            provenance = f"breadboard/column-merge col{node_key_min[2]}"
+        pending.append((node_key_min, tuple(members), provenance))
 
     pending.sort(key=lambda item: item[0])
     return tuple(
