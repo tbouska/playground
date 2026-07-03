@@ -3,6 +3,24 @@
 Classifies a hole address into its electrical base node (:func:`node_key`)
 and its integer grid position (:func:`hole_coords`), reusing the address
 grammar defined in :mod:`breadboard.geometry`.
+
+Contract (the stable convention PRD-A3's mm/px scale and web editor extend):
+
+- **Origin**: top-left of the board body. ``+x`` increases to the right (the
+  numbered column); ``+y`` increases downward (the row, i.e. the line's index
+  in :data:`breadboard.geometry.LINE_ORDER`).
+- **Units**: an integer pitch-grid measured in hole steps, one step =
+  :data:`PITCH_MM` (2.54 mm). The mm-to-pixels scale is deferred to A3; this
+  contract is expressed in hole-step units only.
+- **Grid position**: :func:`hole_coords` returns ``(column, row)`` where
+  ``row = LINE_ORDER.index(line)``.
+- **Banks**: lines ``A``-``E`` are the upper bank and ``F``-``J`` the lower
+  bank (:data:`BANK_UPPER` / :data:`BANK_LOWER`); the A-E/F-J gap separates
+  them into distinct base nodes, so :func:`node_key` maps a grid hole to
+  ``("bank", "upper"|"lower", column)``.
+- **Rails**: rail rows are fixed by ``LINE_ORDER``; :func:`node_key` maps a
+  rail hole to ``("rail", line)``. Rail-continuity breaks are assumed
+  unbroken in v1 (future-flagged).
 """
 
 from dataclasses import dataclass
