@@ -172,6 +172,19 @@ def test_canon_pin_to_wokwi_maps_gnd_to_gnd_zero() -> None:
 
 
 @pytest.mark.parametrize(
+    "gpio, label",
+    [("GPIO1", "TX"), ("GPIO3", "RX"), ("GPIO36", "VP"), ("GPIO39", "VN")],
+    ids=["gpio1-tx", "gpio3-rx", "gpio36-vp", "gpio39-vn"],
+)
+def test_canon_pin_to_wokwi_emits_gpio_board_label_exceptions(gpio: str, label: str) -> None:
+    # Export must be the exact inverse of board_pin_to_canon: the alt-name GPIOs
+    # emit their board label (TX/RX/VP/VN), not the bare digit, or the exported
+    # diagram carries illegal board pins.
+    assert canon_pin_to_wokwi("mcu", gpio) == label
+    assert board_pin_to_canon(label) == gpio
+
+
+@pytest.mark.parametrize(
     "part_type, pins",
     [
         ("wokwi-led", ("A", "C")),
