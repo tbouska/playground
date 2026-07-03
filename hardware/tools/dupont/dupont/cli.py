@@ -141,7 +141,13 @@ def _do_convert(project: Path) -> int:
 
 
 def _do_export(project: Path) -> int:
-    models = sorted(project.rglob("*.model.yaml"))
+    # Exclude layout models: "*.model.yaml" also matches "*.layout.model.yaml",
+    # whose MCU pins are not gpio-typed and would fail export_circuit.
+    models = sorted(
+        m
+        for m in project.rglob("*.model.yaml")
+        if not m.name.endswith(".layout.model.yaml")
+    )
     if not models:
         print(f"no *.model.yaml found under {project}", file=sys.stderr)
         return 1

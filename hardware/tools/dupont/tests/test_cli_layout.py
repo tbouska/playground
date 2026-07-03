@@ -14,6 +14,7 @@ from dupont.model.serialize import load_model
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _SKETCH = _REPO_ROOT / "hardware" / "arduino-ide-sketchbook"
 _SOURCE_LAYOUT = _SKETCH / "espx" / "espx-1-1-2-hello-world" / "layout.yaml"
+_SOURCE_CIRCUIT = _SKETCH / "espx" / "espx-1-1-2-hello-world" / "circuit.yaml"
 
 _CLIP_ID_RE = re.compile(r'(id="|url\(#)(p[0-9a-f]{9,})')
 
@@ -66,3 +67,21 @@ def test_unsupported_direction_with_layout_format_fails_loud(
     assert rc != 0
     err = capsys.readouterr().err
     assert "unsupported direction" in err
+
+
+def test_circuit_export_ignores_migrated_layout_models(tmp_path: Path) -> None:
+    # A dir holding BOTH a migrated circuit model and a migrated layout model:
+    # the default circuit export must skip the .layout.model.yaml (its MCU pins
+    # are not gpio-typed, so export_circuit would fail) and still exit 0.
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "circuit.yaml").write_text(
+        _SOURCE_CIRCUIT.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (proj / "layout.yaml").write_text(
+        _SOURCE_LAYOUT.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    assert main(["import", "--project", str(tmp_path)]) == 0
+    assert main(["import", "--project", str(tmp_path), "--format", "layout"]) == 0
+    assert main(["export", "--project", str(tmp_path)]) == 0
+    assert (proj / "proj.circuit.yaml").exists()
