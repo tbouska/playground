@@ -24,10 +24,12 @@ import sys
 from pathlib import Path
 
 from dupont.check.connectivity import check_connectivity
+from dupont.check.geometry import check_three_format, format_three_report
 from dupont.check.report import format_report
 from dupont.formats.breadboard.importer import import_layout
 from dupont.formats.circuit.exporter import export_circuit
 from dupont.formats.circuit.importer import import_circuit
+from dupont.formats.wokwi.importer import import_wokwi
 from dupont.migrate import MigrationError, migrate_circuit, migrate_layout
 from dupont.model.serialize import load_model
 from dupont.render.breadboard import render_breadboard
@@ -160,7 +162,26 @@ def _do_check(project: Path, strict: bool) -> int:
         print(f"no directory with both circuit.yaml and layout.yaml found under {project}", file=sys.stderr)
         return 1
     failed = False
-    for directory in dual_format_dirs:
+
+    three_format_dirs = [d for d in dual_format_dirs if (d / "diagram.json").exists()]
+    two_format_dirs = [d for d in dual_format_dirs if not (d / "diagram.json").exists()]
+
+    for directory in three_format_dirs:
+        try:
+            schematic = import_circuit(directory / "circuit.yaml")
+            breadboard = import_layout(directory / "layout.yaml")
+            wokwi = import_wokwi(directory / "diagram.json")
+            findings = check_three_format(schematic, breadboard, wokwi, strict=strict)
+            records, summary = format_three_report(findings, strict)
+        except (ValueError, KeyError) as exc:
+            failed = True
+            print(f"FAILED {directory}: {exc}", file=sys.stderr)
+            continue
+        print(summary)
+        if any(record["severity"] == "error" for record in records):
+            failed = True
+
+    for directory in two_format_dirs:
         try:
             schematic = import_circuit(directory / "circuit.yaml")
             breadboard = import_layout(directory / "layout.yaml")
