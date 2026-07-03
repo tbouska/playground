@@ -68,6 +68,8 @@ def canon_pin_to_wokwi(kind: str, canon_pin: str) -> str:
     if kind == "mcu":
         if canon_pin == "GND":
             return "GND.0"
+        if canon_pin in GPIO_TO_PIN:
+            return GPIO_TO_PIN[canon_pin]
         if canon_pin.startswith("GPIO"):
             return canon_pin[4:]
     if kind in CANON_TO_WOKWI_PIN and canon_pin in CANON_TO_WOKWI_PIN[kind]:
