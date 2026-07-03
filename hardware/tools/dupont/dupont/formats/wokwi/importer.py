@@ -12,222 +12,187 @@ from dupont.formats.wokwi.maps import (
     KIND_TO_PART_TYPE,
     wokwi_pin_to_canon,
 )
-from dupont.model.entities import (
-    Circuit,
-    Component,
-    Net,
-    Pin,
-    PinRef,
-    Placement,
-)
+from dupont.model.entities import Circuit, Component, Net, Pin, PinRef, Placement
+
+_BREADBOARD_TYPE = "wokwi-breadboard"
+_PART_TYPE_TO_KIND: dict[str, str] = {v: k for k, v in KIND_TO_PART_TYPE.items()}
 
 
-def import_wokwi(
-    source: str | Path | dict,
-    title: str = "",
-) -> Circuit:
-    # 1. Load the diagram dict
+def _load_diagram(source: str | Path | dict) -> dict[str, Any]:
+    """Load a diagram.json from a dict, a Path, a filename string, or JSON text."""
     if isinstance(source, dict):
-        diagram: dict[str, Any] = source
-    elif isinstance(source, Path):
-        diagram = json.loads(source.read_text())
-    else:
-        if "\n" not in source and Path(source).exists():
-            diagram = json.loads(Path(source).read_text())
-        else:
-            diagram = json.loads(source)
+        return source
+    if isinstance(source, Path):
+        return json.loads(source.read_text())
+    if "\n" not in source and Path(source).exists():
+        return json.loads(Path(source).read_text())
+    return json.loads(source)
 
-    parts: list[dict[str, Any]] = diagram["parts"]
-    connections: list[list] = diagram["connections"]
 
-    # 2. RE-ORIGIN REFERENCE
-    breadboard_parts = [p for p in parts if p["type"] == "wokwi-breadboard"]
-    board_parts = [p for p in parts if p["type"] in BOARD_TO_KIND]
+def _pick_reference(parts: list[dict]) -> dict:
+    """The re-origin reference: the wokwi-breadboard if present, else the sole board.
 
-    if len(breadboard_parts) == 1:
-        ref = breadboard_parts[0]
-    elif len(breadboard_parts) == 0 and len(board_parts) == 1:
-        ref = board_parts[0]
-    else:
-        raise ValueError(
-            "ambiguous or absent reference: "
-            f"{len(breadboard_parts)} breadboard(s), {len(board_parts)} board(s)"
-        )
+    :raises ValueError: when the reference is ambiguous (2+ boards, no breadboard)
+        or absent (no breadboard and no board).
+    """
+    breadboards = [p for p in parts if p["type"] == _BREADBOARD_TYPE]
+    boards = [p for p in parts if p["type"] in BOARD_TO_KIND]
+    if len(breadboards) == 1:
+        return breadboards[0]
+    if not breadboards and len(boards) == 1:
+        return boards[0]
+    raise ValueError(
+        f"ambiguous or absent re-origin reference: "
+        f"{len(breadboards)} breadboard(s), {len(boards)} board(s)"
+    )
 
-    ref_left = float(ref["left"])
-    ref_top = float(ref["top"])
 
-    part_positions: dict[str, tuple[float, float]] = {}
-    for p in parts:
-        part_positions[p["id"]] = (
-            float(p["left"]) - ref_left,
-            float(p["top"]) - ref_top,
-        )
+def _kind_of(part: dict) -> str:
+    """The model kind for a circuit part; raises ValueError on an unmapped part_type."""
+    part_type = part["type"]
+    if part_type not in _PART_TYPE_TO_KIND:
+        raise ValueError(f"unmapped part_type: {part_type!r}")
+    return _PART_TYPE_TO_KIND[part_type]
 
-    # 3. Virtual endpoints
-    def _is_virtual(part_id: str) -> bool:
-        return part_id.startswith("$")
 
-    # 4. CIRCUIT PARTS + IDS
-    circuit_parts = [p for p in parts if p["type"] != "wokwi-breadboard"]
+def _split_endpoint(endpoint: str) -> tuple[str, str]:
+    part_id, _, pin = endpoint.partition(":")
+    return part_id, pin
 
-    part_type_to_kind: dict[str, str] = {v: k for k, v in KIND_TO_PART_TYPE.items()}
 
-    ordered_parts: list[dict[str, Any]] = circuit_parts
+def _resolve_endpoint(
+    endpoint: str,
+    info: dict[str, tuple[str, str]],
+    breadboard_id: str | None,
+) -> str | None:
+    """A connection endpoint as a canonical ``"instance_id:pin"`` key, or None.
 
-    kinds: list[str] = []
-    for p in ordered_parts:
-        if p["type"] in BOARD_TO_KIND:
-            kinds.append(BOARD_TO_KIND[p["type"]])
-        else:
-            if p["type"] not in part_type_to_kind:
-                raise ValueError(f"unmapped part_type: {p['type']!r}")
-            kinds.append(part_type_to_kind[p["type"]])
+    ``$``-virtual and breadboard-reference endpoints carry no circuit connectivity
+    (None); an endpoint naming an unknown part raises ValueError (fail loud).
+    """
+    part_id, pin = _split_endpoint(endpoint)
+    if part_id.startswith("$") or part_id == breadboard_id:
+        return None
+    if part_id not in info:
+        raise ValueError(f"connection references unknown part: {part_id!r}")
+    instance_id, kind = info[part_id]
+    return f"{instance_id}:{wokwi_pin_to_canon(kind, pin)}"
 
-    minted_ids = mint_ids(kinds)
 
-    # raw_id -> (minted_id, kind)
-    raw_to_info: dict[str, tuple[str, str]] = {}
-    for p, mid, kind in zip(ordered_parts, minted_ids, kinds):
-        raw_to_info[p["id"]] = (mid, kind)
+def _closure(
+    connections: list[list],
+    info: dict[str, tuple[str, str]],
+    breadboard_id: str | None,
+) -> tuple[list[Net], dict[str, list[str]]]:
+    """Transitive closure of the flat connection list into canonical nets.
 
-    # 5 & 6. CANONICAL PIN MAP + TRANSITIVE CLOSURE
+    Returns the nets (>=2 distinct members) and, per canonical component id, the
+    ordered distinct canonical pin names that participate in real connections.
+    """
+    # ponytail: local union-find; share it only if a third caller appears.
     parent: dict[str, str] = {}
 
-    def _find(x: str) -> str:
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
+    def find(key: str) -> str:
+        while parent[key] != key:
+            parent[key] = parent[parent[key]]
+            key = parent[key]
+        return key
 
-    def _union(a: str, b: str) -> None:
-        ra, rb = _find(a), _find(b)
-        if ra != rb:
-            parent[ra] = rb
-
-    def _split_endpoint(ep: str) -> tuple[str, str]:
-        idx = ep.index(":")
-        return ep[:idx], ep[idx + 1:]
-
-    for conn in connections:
-        src_ep, dst_ep = conn[0], conn[1]
-        src_id, src_pin = _split_endpoint(src_ep)
-        dst_id, dst_pin = _split_endpoint(dst_ep)
-
-        if _is_virtual(src_id) or _is_virtual(dst_id):
+    for connection in connections:
+        a = _resolve_endpoint(connection[0], info, breadboard_id)
+        b = _resolve_endpoint(connection[1], info, breadboard_id)
+        if a is None or b is None:
             continue
-
-        if src_id not in raw_to_info or dst_id not in raw_to_info:
-            continue
-
-        src_mid, src_kind = raw_to_info[src_id]
-        dst_mid, dst_kind = raw_to_info[dst_id]
-
-        src_canonical = wokwi_pin_to_canon(src_kind, src_pin)
-        dst_canonical = wokwi_pin_to_canon(dst_kind, dst_pin)
-
-        src_key = f"{src_mid}:{src_canonical}"
-        dst_key = f"{dst_mid}:{dst_canonical}"
-
-        if src_key not in parent:
-            parent[src_key] = src_key
-        if dst_key not in parent:
-            parent[dst_key] = dst_key
-        _union(src_key, dst_key)
+        for key in (a, b):
+            parent.setdefault(key, key)
+        root_a, root_b = find(a), find(b)
+        if root_a != root_b:
+            parent[root_a] = root_b
 
     groups: dict[str, list[str]] = {}
+    pins_by_id: dict[str, list[str]] = {}
     for key in parent:
-        root = _find(key)
-        groups.setdefault(root, []).append(key)
+        groups.setdefault(find(key), []).append(key)
+        instance_id, canon = key.split(":", 1)
+        pins_by_id.setdefault(instance_id, []).append(canon)
 
     nets: list[Net] = []
-    for i, keys in enumerate(groups.values(), start=1):
-        if len(keys) < 2:
-            continue
-        # Deduplicate while preserving first-seen order
-        seen: set[str] = set()
-        distinct: list[str] = []
-        for k in keys:
-            if k not in seen:
-                seen.add(k)
-                distinct.append(k)
-        if len(distinct) < 2:
-            continue
-        pin_refs = tuple(
-            PinRef(k.split(":", 1)[0], k.split(":", 1)[1]) for k in distinct
+    for members in groups.values():
+        if len(members) >= 2:
+            refs = tuple(PinRef(*key.split(":", 1)) for key in members)
+            nets.append(Net(f"_wokwi{len(nets) + 1}", refs, "wokwi/closure"))
+    return nets, pins_by_id
+
+
+def _build_components(
+    circuit_parts: list[dict],
+    info: dict[str, tuple[str, str]],
+    pins_by_id: dict[str, list[str]],
+) -> list[Component]:
+    components = []
+    for part in circuit_parts:
+        instance_id, kind = info[part["id"]]
+        pins = tuple(
+            Pin(name, name, "passive", index)
+            for index, name in enumerate(pins_by_id.get(instance_id, []))
         )
-        nets.append(Net(f"_wokwi{i}", pin_refs, "wokwi/closure"))
-
-    # 8. PLACEMENTS
-    placements: list[Placement] = []
-    for p in ordered_parts:
-        mid = raw_to_info[p["id"]][0]
-        px = part_positions[p["id"]]
-        rotation = float(p.get("rotate", 0))
-        placements.append(Placement(
-            component_ref=mid,
-            coords={"px": px},
-            rotation=rotation,
-            source="wokwi",
-            provenance="wokwi/part",
-        ))
-
-    # 9. BREADBOARD SENTINEL
-    if ref["type"] == "wokwi-breadboard":
-        placements.append(Placement(
-            component_ref="__wokwi_breadboard__",
-            coords={"px": (0.0, 0.0)},
-            rotation=0.0,
-            source="wokwi",
-            provenance="wokwi/breadboard-origin",
-        ))
-
-    # COMPONENTS
-    # For each circuit part, collect distinct canonical pins in first-seen order
-    part_canonical_pins: dict[str, list[str]] = {}
-    for conn in connections:
-        src_ep, dst_ep = conn[0], conn[1]
-        src_id, src_pin = _split_endpoint(src_ep)
-        dst_id, dst_pin = _split_endpoint(dst_ep)
-
-        for raw_id, raw_pin in [(src_id, src_pin), (dst_id, dst_pin)]:
-            if _is_virtual(raw_id):
-                continue
-            if raw_id not in raw_to_info:
-                continue
-            mid, kind = raw_to_info[raw_id]
-            canon = wokwi_pin_to_canon(kind, raw_pin)
-            part_canonical_pins.setdefault(mid, []).append(canon)
-
-    components: list[Component] = []
-    for p in ordered_parts:
-        mid = raw_to_info[p["id"]][0]
-        kind = raw_to_info[p["id"]][1]
-        pins = part_canonical_pins.get(mid, [])
-        # Deduplicate canonical pin names in first-seen order
-        seen_pins: set[str] = set()
-        distinct_pins: list[str] = []
-        for canon in pins:
-            if canon not in seen_pins:
-                seen_pins.add(canon)
-                distinct_pins.append(canon)
-
-        pin_objects = tuple(
-            Pin(name, name, "passive", i) for i, name in enumerate(distinct_pins)
+        value = part.get("attrs", {}).get("value") if kind == "resistor" else None
+        components.append(
+            Component(instance_id, kind, pins, part_type=part["type"], value=value)
         )
+    return components
 
-        # Value: for resistors, use attrs.value; otherwise None
-        value = None
-        if p["type"] == "wokwi-resistor":
-            value = p.get("attrs", {}).get("value")
 
-        components.append(Component(
-            instance_id=mid,
-            kind=kind,
-            pins=pin_objects,
-            part_type=p["type"],
-            value=value,
-        ))
+def _build_placements(
+    circuit_parts: list[dict],
+    info: dict[str, tuple[str, str]],
+    ref_left: float,
+    ref_top: float,
+) -> list[Placement]:
+    return [
+        Placement(
+            info[part["id"]][0],
+            {"px": (float(part["left"]) - ref_left, float(part["top"]) - ref_top)},
+            float(part.get("rotate", 0)),
+            "wokwi",
+            "wokwi/part",
+        )
+        for part in circuit_parts
+    ]
+
+
+def import_wokwi(source: str | Path | dict, title: str = "") -> Circuit:
+    """Build a canonical Circuit from a Wokwi diagram.json.
+
+    Nets come from the transitive closure of the flat ``connections`` list;
+    placements are re-origined to the reference part's frame. See the A3 design doc
+    (00009) for the full 9-step contract.
+    """
+    diagram = _load_diagram(source)
+    parts: list[dict[str, Any]] = diagram["parts"]
+
+    reference = _pick_reference(parts)
+    ref_left, ref_top = float(reference["left"]), float(reference["top"])
+    breadboard_id = reference["id"] if reference["type"] == _BREADBOARD_TYPE else None
+
+    circuit_parts = [p for p in parts if p["type"] != _BREADBOARD_TYPE]
+    kinds = [_kind_of(p) for p in circuit_parts]
+    minted = mint_ids(kinds)
+    info = {p["id"]: (mid, kind) for p, mid, kind in zip(circuit_parts, minted, kinds)}
+
+    nets, pins_by_id = _closure(diagram["connections"], info, breadboard_id)
+    components = _build_components(circuit_parts, info, pins_by_id)
+    placements = _build_placements(circuit_parts, info, ref_left, ref_top)
+    if breadboard_id is not None:
+        placements.append(
+            Placement(
+                "__wokwi_breadboard__",
+                {"px": (0.0, 0.0)},
+                0.0,
+                "wokwi",
+                "wokwi/breadboard-origin",
+            )
+        )
 
     return Circuit(
         title=title,

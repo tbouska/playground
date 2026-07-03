@@ -301,3 +301,45 @@ def test_dict_and_path_sources_produce_equal_nets() -> None:
     path_nets = {_net_members(n) for n in from_path.nets}
     dict_nets = {_net_members(n) for n in from_dict.nets}
     assert path_nets == dict_nets
+
+
+def test_filename_string_and_json_text_sources_produce_equal_nets() -> None:
+    """Design step 1 also accepts a filename string and a raw JSON string."""
+    expected = {_net_members(n) for n in import_wokwi(_WOKWI_HELLO_WORLD).nets}
+    from_filename = import_wokwi(str(_WOKWI_HELLO_WORLD))
+    from_json_text = import_wokwi(_WOKWI_HELLO_WORLD.read_text())
+    assert {_net_members(n) for n in from_filename.nets} == expected
+    assert {_net_members(n) for n in from_json_text.nets} == expected
+
+
+# ---------------------------------------------------------------------------
+# Component construction: pin dedup + value
+# ---------------------------------------------------------------------------
+
+
+def test_fanout_hub_component_carries_each_pin_once() -> None:
+    """A hub pin wired to three others must appear exactly once in Component.pins."""
+    parts = [_board_part()] + [
+        _resistor_part(rid, top=10.0 * i, left=10.0 * i)
+        for i, rid in enumerate(["rh", "ra", "rb", "rc"], start=1)
+    ]
+    connections = [_wire("rh:1", "ra:1"), _wire("rh:1", "rb:1"), _wire("rh:1", "rc:1")]
+    circuit = import_wokwi(_diagram(parts, connections))
+    hub = next(c for c in circuit.components if c.instance_id == "R1")
+    assert [p.name for p in hub.pins] == ["1"]
+
+
+def test_resistor_value_populated_from_attrs() -> None:
+    circuit = import_wokwi(_WOKWI_HELLO_WORLD)
+    r1 = next(c for c in circuit.components if c.instance_id == "R1")
+    assert r1.value == "1000"
+
+
+def test_connection_to_unknown_part_raises_value_error() -> None:
+    """Fail loud: a non-virtual endpoint naming a part absent from the diagram."""
+    diagram = _diagram(
+        parts=[_board_part(), _resistor_part("r1", top=10.0, left=10.0)],
+        connections=[_wire("r1:1", "ghost:2")],
+    )
+    with pytest.raises(ValueError):
+        import_wokwi(diagram)
