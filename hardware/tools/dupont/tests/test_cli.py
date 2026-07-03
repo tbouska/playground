@@ -84,7 +84,7 @@ def test_import_writes_each_model_beside_its_source(tmp_path: Path) -> None:
 def test_unsupported_direction_fails_loud(
     project: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    rc = main(["check", "--project", str(project)])
+    rc = main(["wokwi", "--project", str(project)])
     assert rc != 0
     err = capsys.readouterr().err
     assert "unsupported direction" in err

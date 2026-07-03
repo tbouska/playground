@@ -63,7 +63,7 @@ def test_export_layout_renders_images_beside_model(
 def test_unsupported_direction_with_layout_format_fails_loud(
     project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    rc = main(["check", "--project", str(tmp_path), "--format", "layout"])
+    rc = main(["wokwi", "--project", str(tmp_path), "--format", "layout"])
     assert rc != 0
     err = capsys.readouterr().err
     assert "unsupported direction" in err
