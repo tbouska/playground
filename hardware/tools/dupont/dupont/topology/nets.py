@@ -21,7 +21,7 @@ def component_pins(component: Component) -> list[tuple[str, str]]:
     :raises ValueError: If the component kind carries no pin mapping.
     """
     kind = component.kind
-    if kind in ("resistor", "led"):
+    if kind in ("resistor", "led", "button"):
         return [(str(index), hole) for index, hole in enumerate(component.legs, start=1)]
     if kind == "led-rgb":
         return list(component.named_legs.items())

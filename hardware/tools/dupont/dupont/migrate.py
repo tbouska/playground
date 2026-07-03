@@ -23,6 +23,7 @@ import difflib
 from dataclasses import dataclass
 from pathlib import Path
 
+from dupont.formats.breadboard.importer import import_layout
 from dupont.formats.circuit.exporter import export_circuit
 from dupont.formats.circuit.importer import import_circuit
 from dupont.model.serialize import dump_model, load_model
@@ -99,6 +100,56 @@ def migrate_circuit(circuit_path: Path, out_dir: Path) -> Path:
         if output.exists():
             output.unlink()  # per-file rollback
         raise MigrationError(circuit_path, str(exc)) from exc
+
+
+def migrate_layout(layout_path: Path, out_dir: Path) -> Path:
+    """Migrate one ``layout.yaml`` to ``<out_dir>/<project>.layout.model.yaml``.
+
+    The output basename is the source's parent directory name, so layouts from
+    different projects never collide in a shared ``out_dir``. Layout migration
+    has only the model-identity gate (there is no layout text exporter).
+
+    :param layout_path: The ``layout.yaml`` to migrate.
+    :param out_dir: The directory the ``.layout.model.yaml`` is written into.
+    :returns: The path of the written ``.layout.model.yaml``.
+    :raises MigrationError: If the round-trip gate fails. No file is left behind.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output = out_dir / f"{layout_path.parent.name}.layout.model.yaml"
+    try:
+        circuit = import_layout(layout_path)
+
+        schema = dump_model(circuit)
+        if load_model(schema) != circuit:
+            raise ValueError(
+                "model schema round-trip is not identity:\n"
+                + _diff("source", schema, "reloaded", dump_model(load_model(schema)))
+            )
+
+        output.write_text(schema, encoding="utf-8")
+        if load_model(output) != circuit:
+            raise ValueError("written .layout.model.yaml did not reload to the source model")
+        return output
+    except (ValueError, KeyError) as exc:
+        if output.exists():
+            output.unlink()  # per-file rollback
+        raise MigrationError(layout_path, str(exc)) from exc
+
+
+def migrate_layouts(layout_paths: list[Path], out_dir: Path) -> MigrationReport:
+    """Migrate many ``layout.yaml`` files, rolling back each failure in place.
+
+    A failure on one file rolls back only that file and is recorded in
+    :attr:`MigrationReport.failed`; the remaining files still migrate.
+    """
+    migrated: list[Path] = []
+    failed: list[tuple[Path, str]] = []
+    for path in layout_paths:
+        try:
+            migrated.append(migrate_layout(path, out_dir))
+        except MigrationError as exc:
+            failed.append((exc.source, exc.schema_diff))
+    return MigrationReport(tuple(migrated), tuple(failed))
 
 
 def migrate_circuits(circuit_paths: list[Path], out_dir: Path) -> MigrationReport:

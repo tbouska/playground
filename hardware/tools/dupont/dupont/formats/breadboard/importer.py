@@ -104,6 +104,11 @@ def import_layout(source: str | Path | dict) -> Circuit:
         for raw_pin, canonical_pin in pin_remap.items():
             remap[(resistor.ref, raw_pin)] = (resistor.ref, canonical_pin)
 
+    buttons = [c for c in layout.components if c.kind == "button"]
+    for button in buttons:
+        for raw_pin, _hole in component_pins(button):
+            remap[(button.ref, raw_pin)] = (button.ref, raw_pin)
+
     nets = tuple(
         Net(
             net.net_id,
@@ -131,7 +136,20 @@ def import_layout(source: str | Path | dict) -> Circuit:
         )
         for resistor in resistors
     ]
-    components = [mcu_component, *resistor_components]
+    button_components = [
+        Component(
+            button.ref,
+            "button",
+            tuple(
+                Pin(name, name, "passive", index)
+                for index, (name, _hole) in enumerate(component_pins(button))
+            ),
+            label=button.label,
+            value=(button.value or None),
+        )
+        for button in buttons
+    ]
+    components = [mcu_component, *resistor_components, *button_components]
     if led is not None:
         led_pin_names = [remap[(led.ref, raw_pin)][1] for raw_pin, _hole in component_pins(led)]
         led_pins = tuple(
