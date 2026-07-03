@@ -1,5 +1,3 @@
-"""Turn check_connectivity() Findings into plain-dict records plus a summary."""
-
 from __future__ import annotations
 
 from dupont.check.connectivity import Finding
