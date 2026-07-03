@@ -156,7 +156,11 @@ def _find_shared_geometry_components(
     return shared
 
 
-def register(layout: "Circuit", wokwi: "Circuit") -> tuple[float, float]:
+def register(
+    layout: "Circuit",
+    wokwi: "Circuit",
+    shared: dict[str, tuple[str, tuple[float, float]]] | None = None,
+) -> tuple[float, float]:
     """Register layout and Wokwi circuits on their shared anchor component.
 
     The anchor is the shared geometry-carrying component with the
@@ -164,11 +168,15 @@ def register(layout: "Circuit", wokwi: "Circuit") -> tuple[float, float]:
 
     :param layout: The layout (breadboard) circuit.
     :param wokwi: The Wokwi circuit.
+    :param shared: Precomputed shared-geometry map (from
+        ``_find_shared_geometry_components``); recomputed when ``None``. Lets a
+        caller that already scanned avoid a second pass.
     :returns: ``(dx_mm, dy_mm)`` offset = layout_mm - wokwi_mm.
     :rtype: tuple[float, float]
     :raises ValueError: If there is no shared geometry-carrying component.
     """
-    shared = _find_shared_geometry_components(layout, wokwi)
+    if shared is None:
+        shared = _find_shared_geometry_components(layout, wokwi)
     if not shared:
         raise ValueError("no shared geometry-carrying component found")
 
@@ -204,8 +212,13 @@ def compare_geometry(
     if not scale.MEASURED:
         raise RuntimeError("geometry comparison requires measured scale (scale.MEASURED is False)")
 
-    offset = register(layout, wokwi)
+    # Marker-carrying but no component shares geometry with the layout: the
+    # diagram is connectivity-only, not a drift error. Scan once and reuse it
+    # for registration (no second pass).
     shared = _find_shared_geometry_components(layout, wokwi)
+    if not shared:
+        return []
+    offset = register(layout, wokwi, shared)
     anchor_ref = min(shared)
 
     findings: list[GeometryFinding] = []
