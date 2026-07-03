@@ -1,16 +1,18 @@
 """dupont CLI: convert between ``circuit.yaml`` and the interchange model.
 
-Supports circuit<->circuit round-trip, circuit->model-schema conversion, and
-``--format layout`` import/export::
+Supports circuit<->circuit round-trip, circuit->model-schema conversion,
+``--format layout`` import/export, and schematic<->breadboard consistency
+checking::
 
     dupont import  --project <dir>                 # circuit.yaml -> <dir>.model.yaml
     dupont export  --project <dir>                 # *.model.yaml -> <name>.circuit.yaml
     dupont convert --project <dir>                 # circuit.yaml -> <dir>.convert.yaml
     dupont import  --project <dir> --format layout # layout.yaml -> <dir>.layout.model.yaml
     dupont export  --project <dir> --format layout # *.layout.model.yaml -> <name>.layout.svg
+    dupont check   --project <dir> [--strict]      # circuit.yaml + layout.yaml -> report
 
 ``--project`` is scanned recursively. Any other direction or ``--format`` fails
-loud listing the supported set, so remaining surfaces (check, wokwi) report an
+loud listing the supported set, so remaining surfaces (wokwi) report an
 explicit "not supported" error rather than silently doing nothing. All outputs
 are written beside their source under new names; no source file is overwritten.
 """
@@ -21,25 +23,31 @@ import argparse
 import sys
 from pathlib import Path
 
+from dupont.check.connectivity import check_connectivity
+from dupont.check.report import format_report
+from dupont.formats.breadboard.importer import import_layout
 from dupont.formats.circuit.exporter import export_circuit
 from dupont.formats.circuit.importer import import_circuit
 from dupont.migrate import MigrationError, migrate_circuit, migrate_layout
 from dupont.model.serialize import load_model
 from dupont.render.breadboard import render_breadboard
 
-_DIRECTIONS = ("import", "export", "convert")
+_DIRECTIONS = ("import", "export", "convert", "check")
 _FORMATS = ("circuit", "layout")
 
 
 def main(argv: list[str] | None = None) -> int:
     """Dispatch a dupont CLI invocation. Returns a process exit code."""
     parser = argparse.ArgumentParser(prog="dupont", description=__doc__)
-    parser.add_argument("direction", help="import | export | convert")
+    parser.add_argument("direction", help="import | export | convert | check")
     parser.add_argument(
         "--project", required=True, type=Path, help="directory scanned recursively"
     )
     parser.add_argument(
         "--format", default="circuit", help="source format (A1 supports: circuit)"
+    )
+    parser.add_argument(
+        "--strict", action="store_true", help="promote warning-severity findings to errors"
     )
     args = parser.parse_args(argv)
 
@@ -66,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
         return _do_import(args.project)
     if args.direction == "convert":
         return _do_convert(args.project)
+    if args.direction == "check":
+        return _do_check(args.project, args.strict)
     if args.format == "layout":
         return _do_export_layout(args.project)
     return _do_export(args.project)
@@ -137,6 +147,27 @@ def _do_convert(project: Path) -> int:
         except (ValueError, KeyError) as exc:
             failed = True
             print(f"FAILED {source}: {exc}", file=sys.stderr)
+    return 1 if failed else 0
+
+
+def _do_check(project: Path, strict: bool) -> int:
+    dual_format_dirs = [
+        source.parent
+        for source in sorted(project.rglob("circuit.yaml"))
+        if (source.parent / "layout.yaml").exists()
+    ]
+    if not dual_format_dirs:
+        print(f"no directory with both circuit.yaml and layout.yaml found under {project}", file=sys.stderr)
+        return 1
+    failed = False
+    for directory in dual_format_dirs:
+        schematic = import_circuit(directory / "circuit.yaml")
+        breadboard = import_layout(directory / "layout.yaml")
+        findings = check_connectivity(schematic, breadboard)
+        records, summary = format_report(findings, strict)
+        print(summary)
+        if any(record["severity"] == "error" for record in records):
+            failed = True
     return 1 if failed else 0
 
 
