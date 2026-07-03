@@ -57,7 +57,6 @@ def import_wokwi(
     ref_left = float(ref["left"])
     ref_top = float(ref["top"])
 
-    # Re-origin every part
     part_positions: dict[str, tuple[float, float]] = {}
     for p in parts:
         part_positions[p["id"]] = (
@@ -72,19 +71,10 @@ def import_wokwi(
     # 4. CIRCUIT PARTS + IDS
     circuit_parts = [p for p in parts if p["type"] != "wokwi-breadboard"]
 
-    # Invert KIND_TO_PART_TYPE
     part_type_to_kind: dict[str, str] = {v: k for k, v in KIND_TO_PART_TYPE.items()}
 
-    # Build ordered list: board/MCU first, then remaining in diagram order
-    board_part_ref = ref if ref["type"] in BOARD_TO_KIND else None
-    ordered_parts: list[dict[str, Any]] = []
-    if board_part_ref is not None:
-        ordered_parts.append(board_part_ref)
-    for p in circuit_parts:
-        if p is not board_part_ref:
-            ordered_parts.append(p)
+    ordered_parts: list[dict[str, Any]] = circuit_parts
 
-    # Build kinds list
     kinds: list[str] = []
     for p in ordered_parts:
         if p["type"] in BOARD_TO_KIND:
@@ -119,7 +109,6 @@ def import_wokwi(
         idx = ep.index(":")
         return ep[:idx], ep[idx + 1:]
 
-    # Process connections, build union-find
     for conn in connections:
         src_ep, dst_ep = conn[0], conn[1]
         src_id, src_pin = _split_endpoint(src_ep)
@@ -146,7 +135,6 @@ def import_wokwi(
             parent[dst_key] = dst_key
         _union(src_key, dst_key)
 
-    # Group by connected component
     groups: dict[str, list[str]] = {}
     for key in parent:
         root = _find(key)
