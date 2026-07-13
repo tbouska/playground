@@ -200,6 +200,20 @@ def test_compare_geometry_returns_no_findings_when_marker_but_no_shared_geometry
     assert compare_geometry(layout, wokwi) == []
 
 
+def test_compare_geometry_no_shared_returns_empty_even_when_scale_unmeasured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Connectivity-only (marker present, no shared geometry) needs no measured
+    scale: compare returns [] even when scale.MEASURED is False, rather than
+    raising RuntimeError. There is no geometry to compare, so the scale is
+    irrelevant."""
+    layout = _layout_circuit({"C1": "B1"})
+    wokwi = _wokwi_circuit({})  # only the marker; no shared component geometry
+    monkeypatch.setattr("dupont.grid.scale.MEASURED", False)
+
+    assert compare_geometry(layout, wokwi) == []
+
+
 def test_compare_geometry_raises_runtime_error_when_scale_not_measured(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
