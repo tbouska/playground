@@ -1,7 +1,7 @@
 # dupont - agent guardrails
 
 Interop program context: `dev/local/discovery/00006-format-interop-netlist-hub.md`
-(architecture authority), `dev/local/prds/ROADMAP.md` (execution order).
+(architecture authority), `dev/local/audit-results/ROADMAP.md` (execution order).
 
 `dupont/` is the canonical package (interchange model hub). `breadboard/` is
 the legacy draw backend: it stays in the wheel, but new features must go
